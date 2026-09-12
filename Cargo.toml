@@ -1,0 +1,12 @@
+[package]
+name = "pattern"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+winit = "0.26.0"
+wgpu = "0.12.0"
+env_logger = "0.9"
+log = "0.4"
+#pollster = "0.2"
+tokio = "1.53.1"
