@@ -26,5 +26,17 @@ fn run() {
 
 fn main() {
     //run();
-    let ui: Ui;
+    let mut ui = Ui::new();
+    let mut root = ui.layout.new_column();
+    let mut a = ui.layout.new_row();
+    let mut b = ui.layout.new_row();
+    let mut c = ui.layout.new_row();
+    let mut d = ui.layout.new_row();
+    ui.layout.add_child(root, a);
+    ui.layout.add_child(root, b);
+    ui.layout.add_child(root, c);
+    ui.layout.add_child(root, d);
+
+    let cells = ui.layout.organize(1200.0, 800.0);
+    println!("{:?}", cells);
 }

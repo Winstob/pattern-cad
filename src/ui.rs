@@ -1,5 +1,15 @@
 pub mod layout;
 
+use layout::Layout;
+
 pub struct Ui {
-    layout: layout::LayoutNode,
+    pub layout: Layout,
+}
+
+impl Ui {
+    pub fn new() -> Self {
+        Self {
+            layout: Layout::new(),
+        }
+    }
 }
