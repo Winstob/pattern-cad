@@ -1,8 +1,12 @@
+#![allow(dead_code)]
+#![allow(unused)]
 mod app;
+mod ui;
 
 use tokio::runtime::Runtime;
 use winit::event_loop::{EventLoop, ControlFlow};
 use app::App;
+use ui::Ui;
 
 fn run() {
     env_logger::init();
@@ -21,5 +25,6 @@ fn run() {
 }
 
 fn main() {
-    run();
+    //run();
+    let ui: Ui;
 }
