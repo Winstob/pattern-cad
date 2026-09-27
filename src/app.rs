@@ -8,12 +8,12 @@ use winit::{
     window::{Window, WindowId},
 };
 
-use crate::{renderer::Renderer, ui::Ui};
+use crate::{renderer::Renderer, app_ui::AppUi};
 
 pub struct App {
     runtime: Runtime,
     renderer: Option<Renderer>,
-    ui: Ui,
+    app_ui: AppUi,
 }
 
 impl App {
@@ -21,7 +21,7 @@ impl App {
         Self {
             runtime,
             renderer: None,
-            ui: Ui::new(),
+            app_ui: AppUi::new(),
         }
     }
 }
@@ -67,7 +67,7 @@ impl ApplicationHandler for App {
             }
 
             WindowEvent::RedrawRequested => {
-                renderer.render(&self.ui);
+                renderer.render(&self.app_ui.ui);
             }
 
             _ => {}

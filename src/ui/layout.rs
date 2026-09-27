@@ -8,38 +8,42 @@ pub struct LayoutNode {
     size: LayoutNodeSize,
 }
 
+pub struct LayoutNodeOptions {
+    pub size: LayoutNodeSize,
+}
+
 impl Layout {
     pub fn new() -> Self {
         Self { nodes: Vec::new() }
     }
 
-    pub fn new_row(&mut self) -> LayoutNodeId {
+    pub fn new_row(&mut self, opts: LayoutNodeOptions) -> LayoutNodeId {
         let new_node_id = LayoutNodeId(self.nodes.len());
         self.nodes.push(LayoutNode {
             subitem: LayoutNodeItem::Row {
                 children: Vec::new(),
             },
-            size: LayoutNodeSize::Flex(1.0),
+            size: opts.size,
         });
         new_node_id
     }
 
-    pub fn new_column(&mut self) -> LayoutNodeId {
+    pub fn new_column(&mut self, opts: LayoutNodeOptions) -> LayoutNodeId {
         let new_node_id = LayoutNodeId(self.nodes.len());
         self.nodes.push(LayoutNode {
             subitem: LayoutNodeItem::Column {
                 children: Vec::new(),
             },
-            size: LayoutNodeSize::Flex(1.0),
+            size: opts.size,
         });
         new_node_id
     }
 
-    pub fn new_leaf(&mut self) -> LayoutNodeId {
+    pub fn new_leaf(&mut self, opts: LayoutNodeOptions) -> LayoutNodeId {
         let new_node_id = LayoutNodeId(self.nodes.len());
         self.nodes.push(LayoutNode {
             subitem: LayoutNodeItem::Leaf,
-            size: LayoutNodeSize::Flex(1.0),
+            size: opts.size,
         });
         new_node_id
     }
@@ -149,6 +153,10 @@ impl Layout {
 
         space_distributions
     }
+
+    pub fn clear(&mut self) {
+        self.nodes.clear();
+    }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -171,4 +179,12 @@ pub struct Cell {
     pub height: f32,
     pub x: f32,
     pub y: f32,
+}
+
+impl Default for LayoutNodeOptions {
+    fn default() -> Self {
+        Self {
+            size: LayoutNodeSize::Flex(1.0),
+        }
+    }
 }

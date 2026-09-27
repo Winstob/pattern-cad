@@ -12,4 +12,8 @@ impl Ui {
             layout: Layout::new(),
         }
     }
+
+    pub fn clear(&mut self) {
+        self.layout.clear();
+    }
 }
