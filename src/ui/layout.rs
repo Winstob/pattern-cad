@@ -10,16 +10,14 @@ pub struct LayoutNode {
 
 impl Layout {
     pub fn new() -> Self {
-        Self {
-            nodes: Vec::new(),
-        }
+        Self { nodes: Vec::new() }
     }
 
     pub fn new_row(&mut self) -> LayoutNodeId {
         let new_node_id = LayoutNodeId(self.nodes.len());
         self.nodes.push(LayoutNode {
             subitem: LayoutNodeItem::Row {
-                children: Vec::new()
+                children: Vec::new(),
             },
             size: LayoutNodeSize::Flex(1.0),
         });
@@ -30,7 +28,7 @@ impl Layout {
         let new_node_id = LayoutNodeId(self.nodes.len());
         self.nodes.push(LayoutNode {
             subitem: LayoutNodeItem::Column {
-                children: Vec::new()
+                children: Vec::new(),
             },
             size: LayoutNodeSize::Flex(1.0),
         });
@@ -49,8 +47,9 @@ impl Layout {
     pub fn add_child(&mut self, parent_node_id: LayoutNodeId, child_node_id: LayoutNodeId) {
         let mut parent_node = self.node_mut(parent_node_id);
         match &mut parent_node.subitem {
-            LayoutNodeItem::Row { children }
-            | LayoutNodeItem::Column { children } => children.push(child_node_id),
+            LayoutNodeItem::Row { children } | LayoutNodeItem::Column { children } => {
+                children.push(child_node_id)
+            }
             LayoutNodeItem::Leaf => panic!("add_child may not be called on Leaf type!"),
         }
     }
@@ -71,13 +70,20 @@ impl Layout {
     fn node(&self, node_id: LayoutNodeId) -> &LayoutNode {
         &self.nodes[node_id.0]
     }
-    
+
     fn node_mut(&mut self, node_id: LayoutNodeId) -> &mut LayoutNode {
         &mut self.nodes[node_id.0]
     }
 
-    fn organize_node(&self, result: &mut Vec<Cell>, node_id: LayoutNodeId, width: f32, height: f32, x: f32, y: f32) {
-
+    fn organize_node(
+        &self,
+        result: &mut Vec<Cell>,
+        node_id: LayoutNodeId,
+        width: f32,
+        height: f32,
+        x: f32,
+        y: f32,
+    ) {
         /*
         result[node_id] = Cell {
             width,
@@ -101,7 +107,7 @@ impl Layout {
                     self.organize_node(result, *child_id, *size, height, curr_x, y);
                     curr_x = curr_x + size;
                 }
-            },
+            }
             LayoutNodeItem::Column { children } => {
                 let distribution = self.distribute_space(&children, height);
                 let mut curr_y = y;
@@ -109,9 +115,8 @@ impl Layout {
                     self.organize_node(result, *child_id, width, *size, x, curr_y);
                     curr_y = curr_y + size;
                 }
-            },
-            LayoutNodeItem::Leaf {} => {
-            },
+            }
+            LayoutNodeItem::Leaf {} => {}
         }
     }
 
@@ -133,12 +138,12 @@ impl Layout {
             match node.size {
                 LayoutNodeSize::Fixed(size) => space_distributions.push(size),
                 LayoutNodeSize::Flex(mut size) => {
-                    size = leftover_flex_space * (size/total_flex_space);
+                    size = leftover_flex_space * (size / total_flex_space);
                     if size < 0.0 {
                         size = 0.0;
                     }
                     space_distributions.push(size);
-                },
+                }
             }
         }
 
@@ -150,12 +155,8 @@ impl Layout {
 pub struct LayoutNodeId(usize);
 
 pub enum LayoutNodeItem {
-    Row {
-        children: Vec<LayoutNodeId>,
-    },
-    Column {
-        children: Vec<LayoutNodeId>,
-    },
+    Row { children: Vec<LayoutNodeId> },
+    Column { children: Vec<LayoutNodeId> },
     Leaf,
 }
 

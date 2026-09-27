@@ -1,12 +1,13 @@
 #![allow(dead_code)]
 #![allow(unused)]
 mod app;
+mod renderer;
 mod ui;
 
-use tokio::runtime::Runtime;
-use winit::event_loop::{EventLoop, ControlFlow};
 use app::App;
+use tokio::runtime::Runtime;
 use ui::Ui;
+use winit::event_loop::{ControlFlow, EventLoop};
 
 fn run() {
     env_logger::init();
@@ -25,7 +26,7 @@ fn run() {
 }
 
 fn main() {
-    //run();
+    run();
     let mut ui = Ui::new();
     let mut root = ui.layout.new_column();
     let mut a = ui.layout.new_row();
