@@ -67,7 +67,7 @@ impl ApplicationHandler for App {
         window_id: WindowId,
         event: WindowEvent,
     ) {
-        let Some(window) = &self.window else {
+        let Some(window) = self.window.clone() else {
             return;
         };
 
@@ -88,7 +88,18 @@ impl ApplicationHandler for App {
                 self.render();
             }
 
+            WindowEvent::Resized(size) => {
+                if let Some(renderer) = &mut self.renderer {
+                    renderer.resize(size);
+                }
+                window.request_redraw();
+            }
+
             _ => {}
+        }
+
+        if let Some(renderer) = &mut self.renderer {
+            renderer.handle_window_event(&window, &event);
         }
     }
 }

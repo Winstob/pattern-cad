@@ -13,8 +13,7 @@ impl Ui {
         egui::Panel::top("menu_bar").show(ui, |ui| {
             egui::MenuBar::new().ui(ui, |ui| {
                 ui.menu_button("File", |ui| {
-                    if ui.button("New").clicked() {
-                    }
+                    ui.button("New");
                 });
             });
         });

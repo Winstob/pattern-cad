@@ -81,7 +81,11 @@ impl Renderer {
         window: &Window,
         event: &WindowEvent,
     ) {
-        self.egui_state.on_window_event(window, event);
+        let response = self.egui_state.on_window_event(window, event);
+
+        if response.repaint {
+            window.request_redraw();
+        }
     }
 
     pub fn resize(&mut self, size: PhysicalSize<u32>) {
