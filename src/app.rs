@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use tokio::runtime::Runtime;
 use winit::{
     application::ApplicationHandler,
     event::WindowEvent,
@@ -8,39 +7,58 @@ use winit::{
     window::{Window, WindowId},
 };
 
-use crate::{renderer::Renderer, app_ui::AppUi};
+use crate::{
+    renderer::Renderer,
+    ui::Ui,
+};
 
 pub struct App {
-    runtime: Runtime,
+    window: Option<Arc<Window>>,
     renderer: Option<Renderer>,
-    app_ui: AppUi,
+    ui: Ui,
 }
 
 impl App {
-    pub fn new(runtime: Runtime) -> Self {
+    pub fn new() -> Self {
         Self {
-            runtime,
+            window: None,
             renderer: None,
-            app_ui: AppUi::new(),
+            ui: Ui::new(),
         }
+    }
+
+    fn render(&mut self) {
+        let Some(window) = &self.window else {
+            return;
+        };
+
+        let Some(renderer) = &mut self.renderer else {
+            return;
+        };
+        
+        renderer.render(
+            window,
+            &mut self.ui,
+        );
     }
 }
 
 impl ApplicationHandler for App {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
-        if self.renderer.is_some() {
-            return;
-        }
-
         let window = Arc::new(
             event_loop
-                .create_window(Window::default_attributes().with_transparent(true))
-                .expect("Failed to create window"),
+                .create_window(Window::default_attributes())
+                .unwrap()
         );
 
-        let renderer = self.runtime.block_on(Renderer::new(window));
+        let renderer = Renderer::new(
+            window.clone(),
+        );
 
+        self.window = Some(window.clone());
         self.renderer = Some(renderer);
+
+        window.request_redraw();
     }
 
     fn window_event(
@@ -49,34 +67,28 @@ impl ApplicationHandler for App {
         window_id: WindowId,
         event: WindowEvent,
     ) {
-        let Some(renderer) = self.renderer.as_mut() else {
+        let Some(window) = &self.window else {
             return;
         };
 
-        if window_id != renderer.window().id() {
+        if window.id() != window_id {
             return;
         }
 
         match event {
             WindowEvent::CloseRequested => {
+                self.renderer = None; // for some reason we get a segfault here
+                                      // on wayland if we don't explicitly
+                                      // drop this
                 event_loop.exit();
-            }
-
-            WindowEvent::Resized(size) => {
-                renderer.resize(size.width, size.height);
+                return;
             }
 
             WindowEvent::RedrawRequested => {
-                renderer.render(&self.app_ui.ui);
+                self.render();
             }
 
             _ => {}
-        }
-    }
-
-    fn about_to_wait(&mut self, _event_loop: &ActiveEventLoop) {
-        if let Some(renderer) = self.renderer.as_ref() {
-            renderer.request_redraw();
         }
     }
 }
