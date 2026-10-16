@@ -7,10 +7,7 @@ use winit::{
     window::{Window, WindowId},
 };
 
-use crate::{
-    renderer::Renderer,
-    ui::Ui,
-};
+use crate::{renderer::Renderer, ui::Ui};
 
 pub struct App {
     window: Option<Arc<Window>>,
@@ -35,11 +32,8 @@ impl App {
         let Some(renderer) = &mut self.renderer else {
             return;
         };
-        
-        renderer.render(
-            window,
-            &mut self.ui,
-        );
+
+        renderer.render(window, &mut self.ui);
     }
 }
 
@@ -48,12 +42,10 @@ impl ApplicationHandler for App {
         let window = Arc::new(
             event_loop
                 .create_window(Window::default_attributes())
-                .unwrap()
+                .unwrap(),
         );
 
-        let renderer = Renderer::new(
-            window.clone(),
-        );
+        let renderer = Renderer::new(window.clone());
 
         self.window = Some(window.clone());
         self.renderer = Some(renderer);
@@ -78,8 +70,8 @@ impl ApplicationHandler for App {
         match event {
             WindowEvent::CloseRequested => {
                 self.renderer = None; // for some reason we get a segfault here
-                                      // on wayland if we don't explicitly
-                                      // drop this
+                // on wayland if we don't explicitly
+                // drop this
                 event_loop.exit();
                 return;
             }

@@ -1,7 +1,7 @@
 mod app;
+mod cadcore;
 mod renderer;
 mod ui;
-mod cadcore;
 
 fn main() {
     let event_loop = winit::event_loop::EventLoop::new().unwrap();
