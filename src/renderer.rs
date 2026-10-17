@@ -1,5 +1,7 @@
 mod gui_renderer;
 use gui_renderer::GuiRenderer;
+mod cad_renderer;
+use cad_renderer::CadRenderer;
 
 use std::sync::Arc;
 
@@ -13,6 +15,7 @@ pub struct Renderer {
     queue: wgpu::Queue,
     surface_config: wgpu::SurfaceConfiguration,
 
+    cad_renderer: CadRenderer,
     gui_renderer: GuiRenderer,
 }
 
@@ -39,6 +42,8 @@ impl Renderer {
 
         surface.configure(&device, &surface_config);
 
+        let cad_renderer = CadRenderer::new(&device, surface_config.format);
+
         let gui_renderer = GuiRenderer::new(window.clone(), &device, &surface_config);
 
         Self {
@@ -46,6 +51,7 @@ impl Renderer {
             device,
             queue,
             surface_config,
+            cad_renderer,
             gui_renderer,
         }
     }
@@ -98,6 +104,17 @@ impl Renderer {
                 label: Some("egui encoder"),
             });
 
+        self.cad_renderer.render(
+            &mut encoder,
+            &view,
+            ViewportRect {
+                x: 250,
+                y: 80,
+                width: 200,
+                height: 100,
+            },
+        );
+
         self.gui_renderer
             .render(&self.device, &self.queue, window, &mut encoder, &view, ui);
 
@@ -105,4 +122,12 @@ impl Renderer {
 
         self.queue.present(output);
     }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct ViewportRect {
+    pub x: u32,
+    pub y: u32,
+    pub width: u32,
+    pub height: u32,
 }
