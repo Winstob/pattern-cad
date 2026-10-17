@@ -1,12 +1,20 @@
+mod ui;
+use ui::Ui;
+
 use std::sync::Arc;
 use winit::{event::WindowEvent, window::Window};
+use std::any::type_name;
 
-use crate::ui::Ui;
+use super::ViewportRect;
 
 pub struct GuiRenderer {
     egui_ctx: egui::Context,
     egui_state: egui_winit::State,
     egui_renderer: egui_wgpu::Renderer,
+
+    app_ui: Ui,
+    
+    curr_frame_output: Option<egui::FullOutput>,
 }
 
 impl GuiRenderer {
@@ -36,7 +44,20 @@ impl GuiRenderer {
             egui_ctx: egui_ctx,
             egui_state: egui_state,
             egui_renderer: egui_renderer,
+            app_ui: Ui::new(),
+            curr_frame_output: None,
         }
+    }
+
+    pub fn prepare(
+        &mut self,
+        window: &Window,
+    ) {
+        let raw_input = self.egui_state.take_egui_input(window);
+
+        self.curr_frame_output = Some(self.egui_ctx.run_ui(raw_input, |egui_ui| {
+            self.app_ui.show(egui_ui);
+        }));
     }
 
     pub fn render(
@@ -46,13 +67,11 @@ impl GuiRenderer {
         window: &Window,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
-        ui: &mut Ui,
     ) {
-        let raw_input = self.egui_state.take_egui_input(window);
-
-        let mut full_output = self.egui_ctx.run_ui(raw_input, |egui_ui| {
-            ui.show(egui_ui);
-        });
+        let mut full_output = match self.curr_frame_output.take() {
+            Some(output) => output,
+            None => panic!("{}: must call prepare() before render()!", type_name::<Self>()),
+        };
 
         self.egui_state
             .handle_platform_output(window, full_output.platform_output);
@@ -108,5 +127,26 @@ impl GuiRenderer {
     pub fn handle_window_event(&mut self, window: &Window, event: &WindowEvent) -> bool {
         let response = self.egui_state.on_window_event(window, event);
         response.repaint
+    }
+
+    pub fn cad_draw_viewport_rect(&self) -> ViewportRect {
+        let full_output = match self.curr_frame_output.as_ref() {
+            Some(output) => output,
+            None => panic!("{}: must call cad_draw_viewport_rect() between prepare() and render()!", type_name::<Self>()),
+        };
+
+        let raw_rect = self.app_ui.cad_draw_viewport.as_ref().unwrap();
+        let pixels_per_point = full_output.pixels_per_point;
+
+        let min_x = (raw_rect.min.x * pixels_per_point).round() as u32;
+        let min_y = (raw_rect.min.y * pixels_per_point).round() as u32;
+        let max_x = (raw_rect.max.x * pixels_per_point).round() as u32;
+        let max_y = (raw_rect.max.y * pixels_per_point).round() as u32;
+        ViewportRect {
+            x: min_x,
+            y: min_y,
+            width: max_x.saturating_sub(min_x),
+            height: max_y.saturating_sub(min_y),
+        }
     }
 }

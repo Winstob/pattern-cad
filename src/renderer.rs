@@ -7,8 +7,6 @@ use std::sync::Arc;
 
 use winit::{dpi::PhysicalSize, event::WindowEvent, window::Window};
 
-use crate::ui::Ui;
-
 pub struct Renderer {
     surface: wgpu::Surface<'static>,
     device: wgpu::Device,
@@ -73,7 +71,7 @@ impl Renderer {
         self.surface.configure(&self.device, &self.surface_config);
     }
 
-    pub fn render(&mut self, window: &Window, ui: &mut Ui) {
+    pub fn render(&mut self, window: &Window) {
         let output = match self.surface.get_current_texture() {
             wgpu::CurrentSurfaceTexture::Success(output) => output,
 
@@ -104,19 +102,17 @@ impl Renderer {
                 label: Some("egui encoder"),
             });
 
+        self.gui_renderer
+            .prepare(window);
+
         self.cad_renderer.render(
             &mut encoder,
             &view,
-            ViewportRect {
-                x: 250,
-                y: 80,
-                width: 200,
-                height: 100,
-            },
+            self.gui_renderer.cad_draw_viewport_rect(),
         );
 
         self.gui_renderer
-            .render(&self.device, &self.queue, window, &mut encoder, &view, ui);
+            .render(&self.device, &self.queue, window, &mut encoder, &view);
 
         self.queue.submit([encoder.finish()]);
 
