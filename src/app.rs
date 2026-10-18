@@ -8,9 +8,11 @@ use winit::{
 };
 
 use crate::renderer::Renderer;
+use crate::ui::Ui;
 
 pub struct App {
     window: Option<Arc<Window>>,
+    app_ui: Ui,
     renderer: Option<Renderer>,
 }
 
@@ -18,6 +20,7 @@ impl App {
     pub fn new() -> Self {
         Self {
             window: None,
+            app_ui: Ui::new(),
             renderer: None,
         }
     }
@@ -31,7 +34,7 @@ impl App {
             return;
         };
 
-        renderer.render(window);
+        renderer.render(window, &mut self.app_ui);
     }
 }
 

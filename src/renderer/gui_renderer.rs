@@ -1,5 +1,4 @@
-mod ui;
-use ui::Ui;
+use crate::ui::Ui;
 
 use std::any::type_name;
 use std::sync::Arc;
@@ -12,9 +11,9 @@ pub struct GuiRenderer {
     egui_state: egui_winit::State,
     egui_renderer: egui_wgpu::Renderer,
 
-    app_ui: Ui,
-
     curr_frame_output: Option<egui::FullOutput>,
+
+    pub cad_draw_viewport: Option<ViewportRect>,
 }
 
 impl GuiRenderer {
@@ -44,17 +43,18 @@ impl GuiRenderer {
             egui_ctx: egui_ctx,
             egui_state: egui_state,
             egui_renderer: egui_renderer,
-            app_ui: Ui::new(),
             curr_frame_output: None,
+            cad_draw_viewport: None,
         }
     }
 
-    pub fn prepare(&mut self, window: &Window) {
+    pub fn prepare(&mut self, window: &Window, app_ui: &mut Ui) {
         let raw_input = self.egui_state.take_egui_input(window);
 
         self.curr_frame_output = Some(self.egui_ctx.run_ui(raw_input, |egui_ui| {
-            self.app_ui.show(egui_ui);
+            app_ui.show(egui_ui);
         }));
+        self.cad_draw_viewport = Some(self.get_cad_draw_viewport_rect(app_ui));
     }
 
     pub fn render(
@@ -129,7 +129,7 @@ impl GuiRenderer {
         response.repaint
     }
 
-    pub fn cad_draw_viewport_rect(&self) -> ViewportRect {
+    fn get_cad_draw_viewport_rect(&self, app_ui: &Ui) -> ViewportRect {
         let full_output = match self.curr_frame_output.as_ref() {
             Some(output) => output,
             None => panic!(
@@ -138,7 +138,7 @@ impl GuiRenderer {
             ),
         };
 
-        let raw_rect = self.app_ui.cad_draw_viewport.as_ref().unwrap();
+        let raw_rect = app_ui.cad_draw_viewport.as_ref().unwrap();
         let pixels_per_point = full_output.pixels_per_point;
 
         let min_x = (raw_rect.min.x * pixels_per_point).round() as u32;

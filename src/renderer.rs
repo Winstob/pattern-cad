@@ -1,6 +1,7 @@
 mod gui_renderer;
 use gui_renderer::GuiRenderer;
 mod cad_renderer;
+use crate::ui::Ui;
 use cad_renderer::CadRenderer;
 
 use std::sync::Arc;
@@ -71,7 +72,7 @@ impl Renderer {
         self.surface.configure(&self.device, &self.surface_config);
     }
 
-    pub fn render(&mut self, window: &Window) {
+    pub fn render(&mut self, window: &Window, app_ui: &mut Ui) {
         let output = match self.surface.get_current_texture() {
             wgpu::CurrentSurfaceTexture::Success(output) => output,
 
@@ -102,12 +103,12 @@ impl Renderer {
                 label: Some("egui encoder"),
             });
 
-        self.gui_renderer.prepare(window);
+        self.gui_renderer.prepare(window, app_ui);
 
         self.cad_renderer.render(
             &mut encoder,
             &view,
-            self.gui_renderer.cad_draw_viewport_rect(),
+            self.gui_renderer.cad_draw_viewport.unwrap(),
         );
 
         self.gui_renderer
