@@ -1,9 +1,9 @@
 mod ui;
 use ui::Ui;
 
+use std::any::type_name;
 use std::sync::Arc;
 use winit::{event::WindowEvent, window::Window};
-use std::any::type_name;
 
 use super::ViewportRect;
 
@@ -13,7 +13,7 @@ pub struct GuiRenderer {
     egui_renderer: egui_wgpu::Renderer,
 
     app_ui: Ui,
-    
+
     curr_frame_output: Option<egui::FullOutput>,
 }
 
@@ -49,10 +49,7 @@ impl GuiRenderer {
         }
     }
 
-    pub fn prepare(
-        &mut self,
-        window: &Window,
-    ) {
+    pub fn prepare(&mut self, window: &Window) {
         let raw_input = self.egui_state.take_egui_input(window);
 
         self.curr_frame_output = Some(self.egui_ctx.run_ui(raw_input, |egui_ui| {
@@ -70,7 +67,10 @@ impl GuiRenderer {
     ) {
         let mut full_output = match self.curr_frame_output.take() {
             Some(output) => output,
-            None => panic!("{}: must call prepare() before render()!", type_name::<Self>()),
+            None => panic!(
+                "{}: must call prepare() before render()!",
+                type_name::<Self>()
+            ),
         };
 
         self.egui_state
@@ -132,7 +132,10 @@ impl GuiRenderer {
     pub fn cad_draw_viewport_rect(&self) -> ViewportRect {
         let full_output = match self.curr_frame_output.as_ref() {
             Some(output) => output,
-            None => panic!("{}: must call cad_draw_viewport_rect() between prepare() and render()!", type_name::<Self>()),
+            None => panic!(
+                "{}: must call cad_draw_viewport_rect() between prepare() and render()!",
+                type_name::<Self>()
+            ),
         };
 
         let raw_rect = self.app_ui.cad_draw_viewport.as_ref().unwrap();

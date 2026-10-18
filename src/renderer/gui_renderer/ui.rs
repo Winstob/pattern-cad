@@ -28,10 +28,8 @@ impl Ui {
         // must be called last
         self.cad_draw_viewport = None;
         egui::CentralPanel::no_frame().show(ui, |ui| {
-            let (rect, _response) = ui.allocate_exact_size(
-                ui.available_size(),
-                egui::Sense::hover(),
-            );
+            let (rect, _response) =
+                ui.allocate_exact_size(ui.available_size(), egui::Sense::hover());
             self.cad_draw_viewport = Some(rect);
         });
     }

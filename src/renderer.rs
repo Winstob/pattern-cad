@@ -102,8 +102,7 @@ impl Renderer {
                 label: Some("egui encoder"),
             });
 
-        self.gui_renderer
-            .prepare(window);
+        self.gui_renderer.prepare(window);
 
         self.cad_renderer.render(
             &mut encoder,
