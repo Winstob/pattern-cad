@@ -8,12 +8,14 @@ use winit::{
 };
 
 use crate::commands::UiCommand;
+use crate::core::CadModel;
 use crate::renderer::Renderer;
 use crate::ui::Ui;
 
 pub struct App {
     window: Option<Arc<Window>>,
     app_ui: Ui,
+    model: Option<CadModel>,
     renderer: Option<Renderer>,
 }
 
@@ -22,6 +24,7 @@ impl App {
         Self {
             window: None,
             app_ui: Ui::new(),
+            model: None,
             renderer: None,
         }
     }
@@ -42,8 +45,11 @@ impl App {
         renderer.render(window, &mut self.app_ui);
     }
 
-    fn handle_ui_command(&self, cmd: UiCommand) {
+    fn handle_ui_command(&mut self, cmd: UiCommand) {
         match cmd {
+            UiCommand::NewDocument => {
+                self.model = Some(CadModel::new());
+            }
             UiCommand::OpenDocument => println!("Open File!"),
             _ => eprintln!("Unhandled UiCommand [{:?}]", cmd),
         }

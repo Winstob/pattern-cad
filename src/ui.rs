@@ -22,7 +22,9 @@ impl Ui {
         egui::Panel::top("menu_bar").show(ui, |ui| {
             egui::MenuBar::new().ui(ui, |ui| {
                 ui.menu_button("File", |ui| {
-                    //ui.button("New");
+                    if ui.button("New").clicked() {
+                        self.pending_commands.push(UiCommand::NewDocument);
+                    }
                     if ui.button("Open File").clicked() {
                         self.pending_commands.push(UiCommand::OpenDocument);
                     }
