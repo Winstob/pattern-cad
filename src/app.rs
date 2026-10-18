@@ -7,6 +7,7 @@ use winit::{
     window::{Window, WindowId},
 };
 
+use crate::commands::UiCommand;
 use crate::renderer::Renderer;
 use crate::ui::Ui;
 
@@ -26,6 +27,10 @@ impl App {
     }
 
     fn render(&mut self) {
+        for command in self.app_ui.take_pending_commands() {
+            self.handle_ui_command(command);
+        }
+
         let Some(window) = &self.window else {
             return;
         };
@@ -35,6 +40,13 @@ impl App {
         };
 
         renderer.render(window, &mut self.app_ui);
+    }
+
+    fn handle_ui_command(&self, cmd: UiCommand) {
+        match cmd {
+            UiCommand::OpenDocument => println!("Open File!"),
+            _ => eprintln!("Unhandled UiCommand [{:?}]", cmd),
+        }
     }
 }
 

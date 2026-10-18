@@ -1,5 +1,6 @@
 mod app;
 mod cadcore;
+mod commands;
 mod renderer;
 mod ui;
 
