@@ -1,4 +1,5 @@
 use crate::commands::UiCommand;
+use crate::core::CadTool;
 
 pub struct Ui {
     pub cad_draw_viewport: Option<egui::Rect>,
@@ -28,6 +29,15 @@ impl Ui {
                     if ui.button("Open File").clicked() {
                         self.pending_commands.push(UiCommand::OpenDocument);
                     }
+                });
+                ui.menu_button("Tools", |ui| {
+                    ui.menu_button("Line", |ui| {
+                        if ui.button("Line").clicked() {
+                            self.pending_commands.push(UiCommand::SelectTool {
+                                tool: CadTool::DrawLine,
+                            });
+                        }
+                    });
                 });
             });
         });

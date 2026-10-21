@@ -51,6 +51,12 @@ impl App {
                 self.model = Some(CadModel::new());
             }
             UiCommand::OpenDocument => println!("Open File!"),
+            UiCommand::SelectTool { tool } => {
+                self.model
+                    .as_mut()
+                    .expect("Model should be loaded before being allowed to select a tool")
+                    .select_tool(tool);
+            }
             _ => eprintln!("Unhandled UiCommand [{:?}]", cmd),
         }
     }
