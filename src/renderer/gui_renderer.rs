@@ -1,4 +1,4 @@
-use crate::ui::Ui;
+use crate::ui::{Ui, UiContext};
 
 use std::any::type_name;
 use std::sync::Arc;
@@ -48,11 +48,11 @@ impl GuiRenderer {
         }
     }
 
-    pub fn prepare(&mut self, window: &Window, app_ui: &mut Ui) {
+    pub fn prepare(&mut self, window: &Window, app_ui: &mut Ui, ui_context: &UiContext) {
         let raw_input = self.egui_state.take_egui_input(window);
 
         self.curr_frame_output = Some(self.egui_ctx.run_ui(raw_input, |egui_ui| {
-            app_ui.show(egui_ui);
+            app_ui.show(egui_ui, ui_context);
         }));
         self.cad_draw_viewport = Some(self.get_cad_draw_viewport_rect(app_ui));
     }

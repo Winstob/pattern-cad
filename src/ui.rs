@@ -14,12 +14,12 @@ impl Ui {
         }
     }
 
-    pub fn show(&mut self, ui: &mut egui::Ui) {
-        self.show_menu_bar(ui);
+    pub fn show(&mut self, ui: &mut egui::Ui, ui_context: &UiContext) {
+        self.show_menu_bar(ui, ui_context);
         self.show_central_panel(ui);
     }
 
-    fn show_menu_bar(&mut self, ui: &mut egui::Ui) {
+    fn show_menu_bar(&mut self, ui: &mut egui::Ui, ui_context: &UiContext) {
         egui::Panel::top("menu_bar").show(ui, |ui| {
             egui::MenuBar::new().ui(ui, |ui| {
                 ui.menu_button("File", |ui| {
@@ -32,7 +32,10 @@ impl Ui {
                 });
                 ui.menu_button("Tools", |ui| {
                     ui.menu_button("Line", |ui| {
-                        if ui.button("Line").clicked() {
+                        if ui
+                            .add_enabled(ui_context.model_available, egui::Button::new("Line"))
+                            .clicked()
+                        {
                             self.pending_commands.push(UiCommand::SelectTool {
                                 tool: CadTool::DrawLine,
                             });
@@ -56,4 +59,8 @@ impl Ui {
     pub fn take_pending_commands(&mut self) -> Vec<UiCommand> {
         std::mem::take(&mut self.pending_commands)
     }
+}
+
+pub struct UiContext {
+    pub model_available: bool,
 }

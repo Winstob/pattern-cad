@@ -10,7 +10,7 @@ use winit::{
 use crate::commands::UiCommand;
 use crate::core::CadModel;
 use crate::renderer::Renderer;
-use crate::ui::Ui;
+use crate::ui::{Ui, UiContext};
 
 pub struct App {
     window: Option<Arc<Window>>,
@@ -42,7 +42,11 @@ impl App {
             return;
         };
 
-        renderer.render(window, &mut self.app_ui);
+        let ui_context = UiContext {
+            model_available: self.model.is_some(),
+        };
+
+        renderer.render(window, &mut self.app_ui, &ui_context);
     }
 
     fn handle_ui_command(&mut self, cmd: UiCommand) {
