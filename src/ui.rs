@@ -2,15 +2,17 @@ use crate::commands::UiCommand;
 use crate::core::CadTool;
 
 pub struct Ui {
-    pub cad_draw_viewport: Option<egui::Rect>,
     pending_commands: Vec<UiCommand>,
+    pub cad_viewport_rect: Option<egui::Rect>,
+    pub cad_viewport_input: ViewportInput,
 }
 
 impl Ui {
     pub fn new() -> Self {
         Self {
-            cad_draw_viewport: None,
+            cad_viewport_rect: None,
             pending_commands: Vec::new(),
+            cad_viewport_input: ViewportInput::default(),
         }
     }
 
@@ -48,11 +50,20 @@ impl Ui {
 
     fn show_central_panel(&mut self, ui: &mut egui::Ui) {
         // must be called last
-        self.cad_draw_viewport = None;
+        self.cad_viewport_rect = None;
         egui::CentralPanel::no_frame().show(ui, |ui| {
-            let (rect, _response) =
+            let (rect, response) =
                 ui.allocate_exact_size(ui.available_size(), egui::Sense::hover());
-            self.cad_draw_viewport = Some(rect);
+            self.cad_viewport_rect = Some(rect);
+
+            self.cad_viewport_input.focused = response.has_focus();
+            self.cad_viewport_input.pointer_pos = response.hover_pos().map(|pos| {
+                let local = pos - rect.min;
+                Point2 {
+                    x: local.x,
+                    y: local.y,
+                }
+            });
         });
     }
 
@@ -63,4 +74,16 @@ impl Ui {
 
 pub struct UiContext {
     pub model_available: bool,
+}
+
+#[derive(Default)]
+pub struct ViewportInput {
+    pub focused: bool,
+    pub pointer_pos: Option<Point2>,
+}
+
+#[derive(Default, Debug)]
+pub struct Point2 {
+    pub x: f32,
+    pub y: f32,
 }

@@ -13,7 +13,7 @@ pub struct GuiRenderer {
 
     curr_frame_output: Option<egui::FullOutput>,
 
-    pub cad_draw_viewport: Option<ViewportRect>,
+    pub cad_viewport_rect: Option<ViewportRect>,
 }
 
 impl GuiRenderer {
@@ -44,7 +44,7 @@ impl GuiRenderer {
             egui_state: egui_state,
             egui_renderer: egui_renderer,
             curr_frame_output: None,
-            cad_draw_viewport: None,
+            cad_viewport_rect: None,
         }
     }
 
@@ -54,7 +54,7 @@ impl GuiRenderer {
         self.curr_frame_output = Some(self.egui_ctx.run_ui(raw_input, |egui_ui| {
             app_ui.show(egui_ui, ui_context);
         }));
-        self.cad_draw_viewport = Some(self.get_cad_draw_viewport_rect(app_ui));
+        self.cad_viewport_rect = Some(self.get_cad_draw_viewport_rect(app_ui));
     }
 
     pub fn render(
@@ -138,7 +138,7 @@ impl GuiRenderer {
             ),
         };
 
-        let raw_rect = app_ui.cad_draw_viewport.as_ref().unwrap();
+        let raw_rect = app_ui.cad_viewport_rect.as_ref().unwrap();
         let pixels_per_point = full_output.pixels_per_point;
 
         let min_x = (raw_rect.min.x * pixels_per_point).round() as u32;

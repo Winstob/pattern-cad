@@ -46,6 +46,9 @@ impl App {
             model_available: self.model.is_some(),
         };
 
+        renderer.prepare_ui(window, &mut self.app_ui, &ui_context);
+        //println!("{:?}", self.app_ui.cad_viewport_input.pointer_pos);
+
         renderer.render(window, &mut self.app_ui, &ui_context);
     }
 
