@@ -48,7 +48,8 @@ impl App {
 
         renderer.prepare_ui(window, &mut self.app_ui, &ui_context);
         //println!("{:?}", self.app_ui.cad_viewport_input.pointer_pos);
-        //cad_engine.handle_input(self.app_ui.cad_viewport_input);
+        self.cad_engine
+            .handle_input(&mut self.app_ui.cad_viewport_input);
 
         renderer.render(window);
     }

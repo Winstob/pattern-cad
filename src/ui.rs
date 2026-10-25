@@ -1,5 +1,6 @@
 use crate::cad::tool::CadTool;
 use crate::commands::UiCommand;
+use crate::common::types::{Point2, Vec2};
 
 pub struct Ui {
     pending_commands: Vec<UiCommand>,
@@ -33,6 +34,14 @@ impl Ui {
                     }
                 });
                 ui.menu_button("Tools", |ui| {
+                    if ui
+                        .add_enabled(ui_context.model_available, egui::Button::new("Point"))
+                        .clicked()
+                    {
+                        self.pending_commands.push(UiCommand::SelectTool {
+                            tool: CadTool::DrawPoint,
+                        });
+                    }
                     ui.menu_button("Line", |ui| {
                         if ui
                             .add_enabled(ui_context.model_available, egui::Button::new("Line"))
@@ -53,7 +62,7 @@ impl Ui {
         self.cad_viewport_rect = None;
         egui::CentralPanel::no_frame().show(ui, |ui| {
             let (rect, response) =
-                ui.allocate_exact_size(ui.available_size(), egui::Sense::hover());
+                ui.allocate_exact_size(ui.available_size(), egui::Sense::click_and_drag());
             self.cad_viewport_rect = Some(rect);
 
             self.cad_viewport_input.focused = response.has_focus();
@@ -64,6 +73,23 @@ impl Ui {
                     y: local.y,
                 }
             });
+            self.cad_viewport_input.viewport_size = Vec2 {
+                x: rect.width(),
+                y: rect.height(),
+            };
+
+            if response.clicked() {
+                if let Some(pos) = response.interact_pointer_pos() {
+                    self.cad_viewport_input
+                        .pending_events
+                        .push(ViewportEvent::Click {
+                            position: Point2 {
+                                x: (pos.x - rect.min.x),
+                                y: (pos.y - rect.min.y),
+                            },
+                        });
+                }
+            }
         });
     }
 
@@ -80,10 +106,17 @@ pub struct UiContext {
 pub struct ViewportInput {
     pub focused: bool,
     pub pointer_pos: Option<Point2>,
+    pub viewport_size: Vec2,
+    pub pending_events: Vec<ViewportEvent>,
 }
 
-#[derive(Default, Debug)]
-pub struct Point2 {
-    pub x: f32,
-    pub y: f32,
+impl ViewportInput {
+    pub fn take_pending_events(&mut self) -> Vec<ViewportEvent> {
+        std::mem::take(&mut self.pending_events)
+    }
+}
+
+#[derive(Debug)]
+pub enum ViewportEvent {
+    Click { position: Point2 },
 }

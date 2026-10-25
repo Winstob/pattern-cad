@@ -1,17 +1,13 @@
-use super::tool::CadTool;
+use crate::common::types::Point2;
 
-pub struct Model {
-    tool_selected: CadTool,
-}
+pub struct Model {}
 
 impl Model {
     pub fn new() -> Self {
-        Model {
-            tool_selected: CadTool::Select,
-        }
+        Model {}
     }
 
-    pub fn select_tool(&mut self, tool: CadTool) {
-        self.tool_selected = tool;
+    pub fn add_point(&mut self, pos: Point2) {
+        println!("Add point: {:?}", pos);
     }
 }

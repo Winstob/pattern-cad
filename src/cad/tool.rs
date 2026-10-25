@@ -2,4 +2,5 @@
 pub enum CadTool {
     Select,
     DrawLine,
+    DrawPoint,
 }

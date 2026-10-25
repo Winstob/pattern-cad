@@ -1,6 +1,7 @@
 mod app;
 mod cad;
 mod commands;
+mod common;
 mod renderer;
 mod ui;
 
