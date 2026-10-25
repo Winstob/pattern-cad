@@ -1,10 +1,12 @@
-pub struct CadModel {
+use super::tool::CadTool;
+
+pub struct Model {
     tool_selected: CadTool,
 }
 
-impl CadModel {
+impl Model {
     pub fn new() -> Self {
-        CadModel {
+        Model {
             tool_selected: CadTool::Select,
         }
     }
@@ -12,10 +14,4 @@ impl CadModel {
     pub fn select_tool(&mut self, tool: CadTool) {
         self.tool_selected = tool;
     }
-}
-
-#[derive(Debug)]
-pub enum CadTool {
-    Select,
-    DrawLine,
 }

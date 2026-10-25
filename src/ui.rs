@@ -1,5 +1,5 @@
+use crate::cad::tool::CadTool;
 use crate::commands::UiCommand;
-use crate::core::CadTool;
 
 pub struct Ui {
     pending_commands: Vec<UiCommand>,

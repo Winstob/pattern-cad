@@ -1,4 +1,4 @@
-use crate::core::CadTool;
+use crate::cad::tool::CadTool;
 
 #[derive(Debug)]
 pub enum UiCommand {

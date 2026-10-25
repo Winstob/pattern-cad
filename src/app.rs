@@ -7,15 +7,15 @@ use winit::{
     window::{Window, WindowId},
 };
 
+use crate::cad::CadEngine;
 use crate::commands::UiCommand;
-use crate::core::CadModel;
 use crate::renderer::Renderer;
 use crate::ui::{Ui, UiContext};
 
 pub struct App {
     window: Option<Arc<Window>>,
     app_ui: Ui,
-    model: Option<CadModel>,
+    cad_engine: CadEngine,
     renderer: Option<Renderer>,
 }
 
@@ -24,7 +24,7 @@ impl App {
         Self {
             window: None,
             app_ui: Ui::new(),
-            model: None,
+            cad_engine: CadEngine::new(),
             renderer: None,
         }
     }
@@ -43,29 +43,18 @@ impl App {
         };
 
         let ui_context = UiContext {
-            model_available: self.model.is_some(),
+            model_available: self.cad_engine.model_loaded(),
         };
 
         renderer.prepare_ui(window, &mut self.app_ui, &ui_context);
         //println!("{:?}", self.app_ui.cad_viewport_input.pointer_pos);
+        //cad_engine.handle_input(self.app_ui.cad_viewport_input);
 
-        renderer.render(window, &mut self.app_ui, &ui_context);
+        renderer.render(window);
     }
 
     fn handle_ui_command(&mut self, cmd: UiCommand) {
-        match cmd {
-            UiCommand::NewDocument => {
-                self.model = Some(CadModel::new());
-            }
-            UiCommand::OpenDocument => println!("Open File!"),
-            UiCommand::SelectTool { tool } => {
-                self.model
-                    .as_mut()
-                    .expect("Model should be loaded before being allowed to select a tool")
-                    .select_tool(tool);
-            }
-            _ => eprintln!("Unhandled UiCommand [{:?}]", cmd),
-        }
+        self.cad_engine.handle_ui_command(cmd);
     }
 }
 

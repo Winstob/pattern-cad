@@ -76,7 +76,7 @@ impl Renderer {
         self.gui_renderer.prepare(window, app_ui, ui_context);
     }
 
-    pub fn render(&mut self, window: &Window, app_ui: &mut Ui, ui_context: &UiContext) {
+    pub fn render(&mut self, window: &Window) {
         let output = match self.surface.get_current_texture() {
             wgpu::CurrentSurfaceTexture::Success(output) => output,
 
