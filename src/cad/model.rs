@@ -1,13 +1,9 @@
 use crate::common::types::Point2;
 
-pub struct Model {}
+pub struct CadModel {}
 
-impl Model {
+impl CadModel {
     pub fn new() -> Self {
-        Model {}
-    }
-
-    pub fn add_point(&mut self, pos: Point2) {
-        println!("Add point: {:?}", pos);
+        CadModel {}
     }
 }

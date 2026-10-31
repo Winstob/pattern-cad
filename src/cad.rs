@@ -1,15 +1,21 @@
-pub mod model;
+mod document;
+mod expression;
+mod feature;
+mod geometry;
+mod model;
 pub mod tool;
 pub mod view;
 
 use crate::commands::UiCommand;
 use crate::ui::{ViewportEvent, ViewportInput};
-use model::Model;
+use document::CadDocument;
+use expression::Expression;
+use geometry::point::PointDefinition;
 use tool::CadTool;
 use view::CadView;
 
 pub struct CadEngine {
-    model: Option<Model>,
+    document: Option<CadDocument>,
     active_tool: CadTool,
     view: CadView,
 }
@@ -17,7 +23,7 @@ pub struct CadEngine {
 impl CadEngine {
     pub fn new() -> Self {
         CadEngine {
-            model: None,
+            document: None,
             active_tool: CadTool::Select,
             view: CadView::default(),
         }
@@ -26,7 +32,7 @@ impl CadEngine {
     pub fn handle_ui_command(&mut self, cmd: UiCommand) {
         match cmd {
             UiCommand::NewDocument => {
-                self.model = Some(Model::new());
+                self.document = Some(CadDocument::new());
                 self.active_tool = CadTool::Select;
             }
             UiCommand::OpenDocument => {
@@ -44,10 +50,13 @@ impl CadEngine {
             match (&self.active_tool, event) {
                 (CadTool::DrawPoint, ViewportEvent::Click { position }) => {
                     let world_pos = self.view.viewport_to_world(&position, &input.viewport_size);
-                    self.model
+                    self.document
                         .as_mut()
                         .expect("Model should be loaded before adding geometry!")
-                        .add_point(world_pos);
+                        .add_point(PointDefinition::Coordinates {
+                            x: Expression::Constant(world_pos.x.into()),
+                            y: Expression::Constant(world_pos.y.into()),
+                        });
                 }
                 (tool, event) => todo!(
                     "input event not yet handled! (tool: [{:?}] event: [{:?}]",
@@ -59,6 +68,6 @@ impl CadEngine {
     }
 
     pub fn model_loaded(&self) -> bool {
-        self.model.is_some()
+        self.document.is_some()
     }
 }
