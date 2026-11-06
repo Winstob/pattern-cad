@@ -1,6 +1,6 @@
 use super::super::expression::Expression;
 
-#[derive(Debug)]
+#[derive(Debug, Eq, Hash, PartialEq, Clone, Copy)]
 pub struct PointId(pub usize);
 
 #[derive(Debug)]

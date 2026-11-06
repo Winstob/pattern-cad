@@ -1,6 +1,9 @@
+use super::expression::Expression;
 use super::feature::Feature;
 use super::geometry::point::*;
 use super::model::CadModel;
+use crate::cad::model::CadModelPoint;
+use crate::common::types::Point2;
 
 pub struct CadDocument {
     model: CadModel,
@@ -37,10 +40,39 @@ impl CadDocument {
         };
 
         self.history.insert(self.timeline_position, feature);
+        self.timeline_position += 1;
+
         self.regenerate();
     }
 
     fn regenerate(&mut self) {
-        //TODO: regenerate model from feature history
+        // regenerate model from feature history
+        self.model.clear();
+        for feature in self.history.iter() {
+            match feature {
+                Feature::AddPoint { id, definition } => {
+                    let x: f32;
+                    let y: f32;
+                    match definition {
+                        PointDefinition::Coordinates { x: raw_x, y: raw_y } => {
+                            x = self.evaluate_expression(raw_x) as f32;
+                            y = self.evaluate_expression(raw_y) as f32;
+                        }
+                    }
+                    self.model.points.insert(
+                        *id,
+                        CadModelPoint {
+                            location: Point2 { x, y },
+                        },
+                    );
+                }
+            }
+        }
+    }
+
+    fn evaluate_expression(&self, expression: &Expression) -> f64 {
+        match expression {
+            Expression::Constant(val) => *val,
+        }
     }
 }
