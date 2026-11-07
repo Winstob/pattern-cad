@@ -1,9 +1,8 @@
-use super::geometry::point::*;
+use crate::cad::element::Element;
+use crate::cad::ids::FeatureId;
 
 #[derive(Debug)]
-pub enum Feature {
-    AddPoint {
-        id: PointId,
-        definition: PointDefinition,
-    },
+pub struct Feature {
+    pub id: FeatureId,
+    pub elements: Vec<Element>,
 }

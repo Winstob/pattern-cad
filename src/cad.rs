@@ -1,7 +1,8 @@
 mod document;
+mod element;
 mod expression;
 mod feature;
-mod geometry;
+pub mod ids;
 mod model;
 pub mod tool;
 pub mod view;
@@ -9,8 +10,8 @@ pub mod view;
 use crate::commands::UiCommand;
 use crate::ui::{ViewportEvent, ViewportInput};
 use document::CadDocument;
+use element::point::PointDefinition;
 use expression::Expression;
-use geometry::point::PointDefinition;
 use tool::CadTool;
 use view::CadView;
 

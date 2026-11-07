@@ -1,9 +1,9 @@
-use crate::cad::geometry::point::PointId;
+use crate::cad::ids::ElementId;
 use crate::common::types::Point2;
 use std::collections::HashMap;
 
 pub struct CadModel {
-    pub points: HashMap<PointId, CadModelPoint>,
+    pub points: HashMap<ElementId, CadModelPoint>,
 }
 
 impl CadModel {
