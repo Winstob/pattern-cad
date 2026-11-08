@@ -3,10 +3,11 @@ mod element;
 mod expression;
 mod feature;
 pub mod ids;
-mod model;
+pub mod model;
 pub mod tool;
 pub mod view;
 
+use crate::cad::model::CadModel;
 use crate::commands::UiCommand;
 use crate::ui::{ViewportEvent, ViewportInput};
 use document::CadDocument;
@@ -28,6 +29,17 @@ impl CadEngine {
             active_tool: CadTool::Select,
             view: CadView::default(),
         }
+    }
+
+    pub fn get_model(&self) -> Option<&CadModel> {
+        match &self.document {
+            Some(doc) => Some(doc.get_model()),
+            None => None,
+        }
+    }
+
+    pub fn get_view(&self) -> &CadView {
+        &self.view
     }
 
     pub fn handle_ui_command(&mut self, cmd: UiCommand) {

@@ -28,6 +28,10 @@ impl CadDocument {
         }
     }
 
+    pub fn get_model(&self) -> &CadModel {
+        &self.model
+    }
+
     fn allocate_element_id(&mut self) -> ElementId {
         let id = self.next_element_id;
         self.next_element_id = ElementId(self.next_element_id.0 + 1);

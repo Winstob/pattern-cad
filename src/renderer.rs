@@ -1,6 +1,8 @@
 mod gui_renderer;
 use gui_renderer::GuiRenderer;
 mod cad_renderer;
+use crate::cad::model::CadModel;
+use crate::cad::view::CadView;
 use crate::ui::{Ui, UiContext};
 use cad_renderer::CadRenderer;
 
@@ -74,6 +76,10 @@ impl Renderer {
 
     pub fn prepare_ui(&mut self, window: &Window, app_ui: &mut Ui, ui_context: &UiContext) {
         self.gui_renderer.prepare(window, app_ui, ui_context);
+    }
+
+    pub fn prepare_cad_model(&mut self, model: Option<&CadModel>, model_view: &CadView) {
+        self.cad_renderer.prepare(&self.queue, model, model_view);
     }
 
     pub fn render(&mut self, window: &Window) {

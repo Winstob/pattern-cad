@@ -42,11 +42,15 @@ impl App {
             return;
         };
 
+        let model = self.cad_engine.get_model();
+        let model_view = self.cad_engine.get_view();
         let ui_context = UiContext {
-            model_available: self.cad_engine.model_loaded(),
+            model_available: model.is_some(),
         };
 
         renderer.prepare_ui(window, &mut self.app_ui, &ui_context);
+        renderer.prepare_cad_model(model, model_view);
+
         //println!("{:?}", self.app_ui.cad_viewport_input.pointer_pos);
         self.cad_engine
             .handle_input(&mut self.app_ui.cad_viewport_input);

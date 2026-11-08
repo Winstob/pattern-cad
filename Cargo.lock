@@ -1731,6 +1731,7 @@ dependencies = [
 name = "pattern-cad"
 version = "0.1.0"
 dependencies = [
+ "bytemuck",
  "egui",
  "egui-wgpu",
  "egui-winit",
