@@ -45,8 +45,7 @@ impl CadDocument {
     }
 
     pub fn add_point(&mut self, def: PointDefinition) {
-        println!("Add point: {:?}", def);
-
+        //println!("Add point: {:?}", def);
         let element_id = self.allocate_element_id();
         let point = Element {
             id: element_id,

@@ -48,7 +48,7 @@ impl CadRenderer {
 
         let view_transform_buffer_descriptor = wgpu::BufferDescriptor {
             label: Some("CAD View Transform Buffer"),
-            size: 64,
+            size: 96,
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         };
@@ -313,7 +313,7 @@ impl CadRenderer {
 
         queue.write_buffer(&self.num_points_buffer, 0, &self.num_points.to_ne_bytes());
 
-        let vertex_buffer_size = (3 * points.len() * std::mem::size_of::<GpuVertex>()) as u64;
+        let vertex_buffer_size = (3 * 16 * points.len() * std::mem::size_of::<GpuVertex>()) as u64;
         if self.vertex_buffer_descriptor.size < vertex_buffer_size {
             self.vertex_buffer_descriptor.size = vertex_buffer_size;
             self.vertex_buffer = self.device.create_buffer(&self.vertex_buffer_descriptor);
@@ -324,11 +324,17 @@ impl CadRenderer {
         queue.write_buffer(&self.indirect_draw_args_buffer, 8, &(0u32).to_ne_bytes());
         queue.write_buffer(&self.indirect_draw_args_buffer, 12, &(0u32).to_ne_bytes());
 
-        let transform = model_view.world_to_ndc_matrix(viewport_size, pixels_per_mm);
+        let transform = ViewTransform {
+            world_to_ndc_matrix: model_view
+                .world_to_ndc_matrix(viewport_size, pixels_per_mm)
+                .to_cols_array_2d(),
+            viewport_size: [viewport_size.x, viewport_size.y],
+            _padding: [0.0; 2],
+        };
         queue.write_buffer(
             &self.view_transform_buffer,
             0,
-            bytemuck::cast_slice(&transform.to_cols_array()),
+            bytemuck::bytes_of(&transform),
         );
 
         if recreate_bind_groups {
@@ -418,7 +424,9 @@ struct DrawIndirectArgs {
 #[repr(C)]
 #[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
 struct ViewTransform {
-    world_to_ndc_matrix: [[f32; 4]; 4],
+    pub world_to_ndc_matrix: [[f32; 4]; 4],
+    pub viewport_size: [f32; 2],
+    pub _padding: [f32; 2],
 }
 
 #[repr(C)]
