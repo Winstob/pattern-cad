@@ -1,6 +1,6 @@
 use crate::cad::tool::CadTool;
 use crate::commands::UiCommand;
-use crate::common::types::{Point2, Vec2};
+use glam::*;
 
 pub struct Ui {
     pending_commands: Vec<UiCommand>,
@@ -68,7 +68,7 @@ impl Ui {
             self.cad_viewport_input.focused = response.has_focus();
             self.cad_viewport_input.pointer_pos = response.hover_pos().map(|pos| {
                 let local = pos - rect.min;
-                Point2 {
+                Vec2 {
                     x: local.x,
                     y: local.y,
                 }
@@ -83,7 +83,7 @@ impl Ui {
                     self.cad_viewport_input
                         .pending_events
                         .push(ViewportEvent::Click {
-                            position: Point2 {
+                            position: Vec2 {
                                 x: (pos.x - rect.min.x),
                                 y: (pos.y - rect.min.y),
                             },
@@ -105,7 +105,7 @@ pub struct UiContext {
 #[derive(Default)]
 pub struct ViewportInput {
     pub focused: bool,
-    pub pointer_pos: Option<Point2>,
+    pub pointer_pos: Option<Vec2>,
     pub viewport_size: Vec2,
     pub pending_events: Vec<ViewportEvent>,
 }
@@ -118,5 +118,5 @@ impl ViewportInput {
 
 #[derive(Debug)]
 pub enum ViewportEvent {
-    Click { position: Point2 },
+    Click { position: Vec2 },
 }

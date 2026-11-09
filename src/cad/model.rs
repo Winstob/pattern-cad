@@ -1,6 +1,6 @@
 use crate::cad::ids::ElementId;
-use crate::common::types::Point2;
 use std::collections::HashMap;
+use glam::*;
 
 pub struct CadModel {
     pub points: HashMap<ElementId, CadModelPoint>,
@@ -19,5 +19,5 @@ impl CadModel {
 }
 
 pub struct CadModelPoint {
-    pub location: Point2,
+    pub location: Vec2,
 }
