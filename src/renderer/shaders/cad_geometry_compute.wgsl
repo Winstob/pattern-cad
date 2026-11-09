@@ -23,9 +23,12 @@ var<storage, read_write> vertices: array<GpuVertex>;
 var<storage, read_write> draw_args: DrawIndirectArgs;
 
 @group(0) @binding(2)
-var<storage, read> points: array<GpuPoint>;
+var<uniform> view_transform: mat4x4<f32>;
 
 @group(0) @binding(3)
+var<storage, read> points: array<GpuPoint>;
+
+@group(0) @binding(4)
 var<uniform> num_points: u32;
 
 struct Triangle {
@@ -56,22 +59,20 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
 }
 
 fn generate_triangle(point: GpuPoint) -> Triangle {
-    //let center = view_transform(point.position);
-    //let center = point.position;
-    //let center = vec2<f32>(0.0, 0.0);
-    let center = vec2<f32>(point.position.x, -point.position.y) / 100.0;
+    let center_world = vec4<f32>(point.position.x, -point.position.y, 0.0, 1.0);
+    let center_ndc = view_transform * center_world;
 
     let half_size = 0.05;
 
-    let v1 = center + vec2<f32>(-half_size, -half_size);
-    let v2 = center + vec2<f32>(0.0, half_size);
-    let v3 = center + vec2<f32>(half_size, -half_size);
+    let v1 = center_ndc + vec4<f32>(-half_size, -half_size, 0.0, 0.0);
+    let v2 = center_ndc + vec4<f32>(0.0, half_size, 0.0, 0.0);
+    let v3 = center_ndc + vec4<f32>(half_size, -half_size, 0.0, 0.0);
 
     let color = vec4<f32>(0.0, 0.0, 0.0, 1.0);
 
     return Triangle(
-        GpuVertex(vec4<f32>(v1, 0.0, 1.0), color),
-        GpuVertex(vec4<f32>(v2, 0.0, 1.0), color),
-        GpuVertex(vec4<f32>(v3, 0.0, 1.0), color)
+        GpuVertex(v1, color),
+        GpuVertex(v2, color),
+        GpuVertex(v3, color),
     );
 }

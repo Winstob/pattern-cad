@@ -1,6 +1,6 @@
 use crate::cad::ids::ElementId;
-use std::collections::HashMap;
 use glam::*;
+use std::collections::HashMap;
 
 pub struct CadModel {
     pub points: HashMap<ElementId, CadModelPoint>,

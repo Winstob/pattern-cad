@@ -1,6 +1,7 @@
 use super::ViewportRect;
 use crate::cad::model::CadModel;
 use crate::renderer::CadView;
+use glam::*;
 
 pub struct CadRenderer {
     device: wgpu::Device,
@@ -9,6 +10,7 @@ pub struct CadRenderer {
     vertex_buffer_descriptor: wgpu::BufferDescriptor<'static>,
     vertex_buffer: wgpu::Buffer,
     indirect_draw_args_buffer: wgpu::Buffer,
+    view_transform_buffer: wgpu::Buffer,
     points_buffer_descriptor: wgpu::BufferDescriptor<'static>,
     points_buffer: wgpu::Buffer,
     num_points_buffer: wgpu::Buffer,
@@ -43,6 +45,14 @@ impl CadRenderer {
             mapped_at_creation: false,
         };
         let indirect_draw_args_buffer = device.create_buffer(&indirect_draw_args_buffer_descriptor);
+
+        let view_transform_buffer_descriptor = wgpu::BufferDescriptor {
+            label: Some("CAD View Transform Buffer"),
+            size: 64,
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        };
+        let view_transform_buffer = device.create_buffer(&view_transform_buffer_descriptor);
 
         let points_buffer_descriptor = wgpu::BufferDescriptor {
             label: Some("CAD Points Buffer"),
@@ -86,9 +96,20 @@ impl CadRenderer {
                         },
                         count: None,
                     },
-                    // Points
+                    // World -> NDC view transform matrix
                     wgpu::BindGroupLayoutEntry {
                         binding: 2,
+                        visibility: wgpu::ShaderStages::COMPUTE,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
+                    },
+                    // Points
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 3,
                         visibility: wgpu::ShaderStages::COMPUTE,
                         ty: wgpu::BindingType::Buffer {
                             ty: wgpu::BufferBindingType::Storage { read_only: true },
@@ -99,7 +120,7 @@ impl CadRenderer {
                     },
                     // Number of points
                     wgpu::BindGroupLayoutEntry {
-                        binding: 3,
+                        binding: 4,
                         visibility: wgpu::ShaderStages::COMPUTE,
                         ty: wgpu::BindingType::Buffer {
                             ty: wgpu::BufferBindingType::Uniform,
@@ -145,10 +166,14 @@ impl CadRenderer {
                 },
                 wgpu::BindGroupEntry {
                     binding: 2,
-                    resource: points_buffer.as_entire_binding(),
+                    resource: view_transform_buffer.as_entire_binding(),
                 },
                 wgpu::BindGroupEntry {
                     binding: 3,
+                    resource: points_buffer.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 4,
                     resource: num_points_buffer.as_entire_binding(),
                 },
             ],
@@ -206,6 +231,7 @@ impl CadRenderer {
             vertex_buffer_descriptor,
             vertex_buffer,
             indirect_draw_args_buffer,
+            view_transform_buffer,
             points_buffer_descriptor,
             points_buffer,
             num_points_buffer,
@@ -235,10 +261,14 @@ impl CadRenderer {
                 },
                 wgpu::BindGroupEntry {
                     binding: 2,
-                    resource: self.points_buffer.as_entire_binding(),
+                    resource: self.view_transform_buffer.as_entire_binding(),
                 },
                 wgpu::BindGroupEntry {
                     binding: 3,
+                    resource: self.points_buffer.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 4,
                     resource: self.num_points_buffer.as_entire_binding(),
                 },
             ],
@@ -247,7 +277,14 @@ impl CadRenderer {
 
     fn recreate_render_bind_group(&mut self) {}
 
-    pub fn prepare(&mut self, queue: &wgpu::Queue, model: Option<&CadModel>, model_view: &CadView) {
+    pub fn prepare(
+        &mut self,
+        queue: &wgpu::Queue,
+        model: Option<&CadModel>,
+        model_view: &CadView,
+        viewport_size: &Vec2,
+        pixels_per_mm: f32,
+    ) {
         let mut recreate_bind_groups = false;
 
         self.background_color = wgpu::Color::BLACK;
@@ -286,6 +323,13 @@ impl CadRenderer {
         queue.write_buffer(&self.indirect_draw_args_buffer, 4, &(1u32).to_ne_bytes());
         queue.write_buffer(&self.indirect_draw_args_buffer, 8, &(0u32).to_ne_bytes());
         queue.write_buffer(&self.indirect_draw_args_buffer, 12, &(0u32).to_ne_bytes());
+
+        let transform = model_view.world_to_ndc_matrix(viewport_size, pixels_per_mm);
+        queue.write_buffer(
+            &self.view_transform_buffer,
+            0,
+            bytemuck::cast_slice(&transform.to_cols_array()),
+        );
 
         if recreate_bind_groups {
             self.recreate_compute_bind_group();
@@ -357,14 +401,6 @@ impl CadRenderer {
 
 #[repr(C)]
 #[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
-pub struct GpuPoint {
-    pub location: [f32; 2],
-    pub element_id: u32,
-    pub _padding: u32,
-}
-
-#[repr(C)]
-#[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct GpuVertex {
     pub position: [f32; 4],
     pub color: [f32; 4],
@@ -377,4 +413,18 @@ struct DrawIndirectArgs {
     instance_count: u32,
     first_vertex: u32,
     first_instance: u32,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
+struct ViewTransform {
+    world_to_ndc_matrix: [[f32; 4]; 4],
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
+pub struct GpuPoint {
+    pub location: [f32; 2],
+    pub element_id: u32,
+    pub _padding: u32,
 }

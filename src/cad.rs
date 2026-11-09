@@ -58,11 +58,13 @@ impl CadEngine {
         }
     }
 
-    pub fn handle_input(&mut self, input: &mut ViewportInput) {
+    pub fn handle_input(&mut self, input: &mut ViewportInput, pixels_per_mm: f32) {
         for event in input.take_pending_events() {
             match (&self.active_tool, event) {
                 (CadTool::DrawPoint, ViewportEvent::Click { position }) => {
-                    let world_pos = self.view.viewport_to_world(&position, &input.viewport_size);
+                    let world_pos =
+                        self.view
+                            .viewport_to_world(&position, &input.viewport_size, pixels_per_mm);
                     self.document
                         .as_mut()
                         .expect("Model should be loaded before adding geometry!")
@@ -78,9 +80,5 @@ impl CadEngine {
                 ),
             }
         }
-    }
-
-    pub fn model_loaded(&self) -> bool {
-        self.document.is_some()
     }
 }

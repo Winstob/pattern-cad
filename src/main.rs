@@ -1,6 +1,7 @@
 mod app;
 mod cad;
 mod commands;
+mod display_metrics;
 mod renderer;
 mod ui;
 

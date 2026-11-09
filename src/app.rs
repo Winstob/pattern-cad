@@ -9,6 +9,7 @@ use winit::{
 
 use crate::cad::CadEngine;
 use crate::commands::UiCommand;
+use crate::display_metrics::DisplayMetrics;
 use crate::renderer::Renderer;
 use crate::ui::{Ui, UiContext};
 
@@ -17,6 +18,7 @@ pub struct App {
     app_ui: Ui,
     cad_engine: CadEngine,
     renderer: Option<Renderer>,
+    display_metrics: DisplayMetrics,
 }
 
 impl App {
@@ -26,6 +28,7 @@ impl App {
             app_ui: Ui::new(),
             cad_engine: CadEngine::new(),
             renderer: None,
+            display_metrics: DisplayMetrics::default(),
         }
     }
 
@@ -49,11 +52,18 @@ impl App {
         };
 
         renderer.prepare_ui(window, &mut self.app_ui, &ui_context);
-        renderer.prepare_cad_model(model, model_view);
+        renderer.prepare_cad_model(
+            model,
+            model_view,
+            &self.app_ui.cad_viewport_input.viewport_size,
+            self.display_metrics.pixels_per_mm,
+        );
 
         //println!("{:?}", self.app_ui.cad_viewport_input.pointer_pos);
-        self.cad_engine
-            .handle_input(&mut self.app_ui.cad_viewport_input);
+        self.cad_engine.handle_input(
+            &mut self.app_ui.cad_viewport_input,
+            self.display_metrics.pixels_per_mm,
+        );
 
         renderer.render(window);
     }

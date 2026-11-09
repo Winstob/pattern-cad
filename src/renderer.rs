@@ -5,6 +5,7 @@ use crate::cad::model::CadModel;
 use crate::cad::view::CadView;
 use crate::ui::{Ui, UiContext};
 use cad_renderer::CadRenderer;
+use glam::*;
 
 use std::sync::Arc;
 
@@ -78,8 +79,15 @@ impl Renderer {
         self.gui_renderer.prepare(window, app_ui, ui_context);
     }
 
-    pub fn prepare_cad_model(&mut self, model: Option<&CadModel>, model_view: &CadView) {
-        self.cad_renderer.prepare(&self.queue, model, model_view);
+    pub fn prepare_cad_model(
+        &mut self,
+        model: Option<&CadModel>,
+        model_view: &CadView,
+        viewport_size: &Vec2,
+        pixels_per_mm: f32,
+    ) {
+        self.cad_renderer
+            .prepare(&self.queue, model, model_view, viewport_size, pixels_per_mm);
     }
 
     pub fn render(&mut self, window: &Window) {
