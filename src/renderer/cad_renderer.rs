@@ -38,9 +38,11 @@ impl CadRenderer {
         let indirect_draw_args_buffer = Buffer::builder()
             .label("CAD Indirect Draw Args Buffer")
             .size(16)
-            .usage(wgpu::BufferUsages::STORAGE
-                | wgpu::BufferUsages::INDIRECT
-                | wgpu::BufferUsages::COPY_DST)
+            .usage(
+                wgpu::BufferUsages::STORAGE
+                    | wgpu::BufferUsages::INDIRECT
+                    | wgpu::BufferUsages::COPY_DST,
+            )
             .build(device);
 
         let view_transform_buffer = Buffer::builder()
@@ -218,17 +220,37 @@ impl CadRenderer {
         }
         queue.write_buffer(&self.points_buffer.data(), 0, bytemuck::cast_slice(&points));
 
-        queue.write_buffer(&self.num_points_buffer.data(), 0, &self.num_points.to_ne_bytes());
+        queue.write_buffer(
+            &self.num_points_buffer.data(),
+            0,
+            &self.num_points.to_ne_bytes(),
+        );
 
         let vertex_buffer_size = (3 * 16 * points.len() * std::mem::size_of::<GpuVertex>()) as u64;
         if self.vertex_buffer.size() < vertex_buffer_size {
             self.vertex_buffer.resize(vertex_buffer_size);
             recreate_bind_groups = true;
         }
-        queue.write_buffer(&self.indirect_draw_args_buffer.data(), 0, &(0u32).to_ne_bytes());
-        queue.write_buffer(&self.indirect_draw_args_buffer.data(), 4, &(1u32).to_ne_bytes());
-        queue.write_buffer(&self.indirect_draw_args_buffer.data(), 8, &(0u32).to_ne_bytes());
-        queue.write_buffer(&self.indirect_draw_args_buffer.data(), 12, &(0u32).to_ne_bytes());
+        queue.write_buffer(
+            &self.indirect_draw_args_buffer.data(),
+            0,
+            &(0u32).to_ne_bytes(),
+        );
+        queue.write_buffer(
+            &self.indirect_draw_args_buffer.data(),
+            4,
+            &(1u32).to_ne_bytes(),
+        );
+        queue.write_buffer(
+            &self.indirect_draw_args_buffer.data(),
+            8,
+            &(0u32).to_ne_bytes(),
+        );
+        queue.write_buffer(
+            &self.indirect_draw_args_buffer.data(),
+            12,
+            &(0u32).to_ne_bytes(),
+        );
 
         let transform = ViewTransform {
             world_to_ndc_matrix: model_view
