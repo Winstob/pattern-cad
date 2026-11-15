@@ -113,6 +113,27 @@ impl Renderer {
             }
         };
 
+        // TODO: don't recreate this every frame?
+        let config = self
+            .surface
+            .get_configuration()
+            .expect("Should have a configured surface before rendering!");
+        let msaa_texture = self.device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("MSAA Texture"),
+            size: wgpu::Extent3d {
+                width: config.width,
+                height: config.height,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 4,
+            dimension: wgpu::TextureDimension::D2,
+            format: config.format,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+            view_formats: &[],
+        });
+        let msaa_view = msaa_texture.create_view(&wgpu::TextureViewDescriptor::default());
+
         let view = output
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
@@ -125,6 +146,7 @@ impl Renderer {
 
         self.cad_renderer.render(
             &mut encoder,
+            &msaa_view,
             &view,
             self.gui_renderer.cad_viewport_rect.unwrap(),
         );

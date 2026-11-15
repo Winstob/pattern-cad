@@ -165,7 +165,11 @@ impl CadRenderer {
             }),
             primitive: wgpu::PrimitiveState::default(),
             depth_stencil: None,
-            multisample: wgpu::MultisampleState::default(),
+            multisample: wgpu::MultisampleState {
+                count: 4,
+                mask: !0,
+                alpha_to_coverage_enabled: false,
+            },
             multiview_mask: None,
             cache: None,
         });
@@ -274,6 +278,7 @@ impl CadRenderer {
     pub fn render(
         &self,
         encoder: &mut wgpu::CommandEncoder,
+        msaa_target: &wgpu::TextureView,
         target: &wgpu::TextureView,
         viewport: ViewportRect,
     ) {
@@ -300,9 +305,9 @@ impl CadRenderer {
             let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("CAD Viewport"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                    view: target,
+                    view: msaa_target,
                     depth_slice: None,
-                    resolve_target: None,
+                    resolve_target: Some(target),
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Clear(self.background_color),
                         store: wgpu::StoreOp::Store,
