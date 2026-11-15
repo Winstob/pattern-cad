@@ -1,5 +1,6 @@
 mod gui_renderer;
 use gui_renderer::GuiRenderer;
+mod bind_group;
 mod buffer;
 mod cad_renderer;
 use crate::cad::model::CadModel;

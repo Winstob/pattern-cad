@@ -1,8 +1,15 @@
+use std::cell::RefCell;
+use std::rc::Rc;
+
 pub struct Buffer {
     device: wgpu::Device,
-    buffer: wgpu::Buffer,
-
     builder: BufferBuilder,
+
+    pub data: Rc<RefCell<BufferInternal>>,
+}
+
+pub struct BufferInternal {
+    pub buffer: wgpu::Buffer,
 }
 
 pub struct BufferBuilder {
@@ -24,7 +31,9 @@ impl Buffer {
 
     pub fn resize(&mut self, new_size: u64) {
         self.builder.size = new_size;
-        self.buffer = self.device.create_buffer(&self.builder.descriptor());
+        *self.data.borrow_mut() = BufferInternal {
+            buffer: self.device.create_buffer(&self.builder.descriptor()),
+        };
     }
 }
 
@@ -32,10 +41,14 @@ impl BufferBuilder {
     pub fn build(self, device: &wgpu::Device) -> Buffer {
         let descriptor = self.descriptor();
 
+        let data = Rc::new(RefCell::new(BufferInternal {
+            buffer: device.create_buffer(&descriptor),
+        }));
+
         Buffer {
             device: device.clone(),
-            buffer: device.create_buffer(&descriptor),
             builder: self,
+            data,
         }
     }
 
