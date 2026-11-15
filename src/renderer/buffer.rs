@@ -1,4 +1,4 @@
-use std::cell::RefCell;
+use std::cell::{Ref, RefCell};
 use std::rc::Rc;
 
 pub struct Buffer {
@@ -35,6 +35,14 @@ impl Buffer {
             buffer: self.device.create_buffer(&self.builder.descriptor()),
         };
     }
+
+    pub fn size(&self) -> u64 {
+        self.builder.size
+    }
+
+    pub fn data(&self) -> Ref<'_, wgpu::Buffer> {
+        Ref::map(self.data.borrow(), |internal| &internal.buffer)
+    }
 }
 
 impl BufferBuilder {
@@ -61,8 +69,8 @@ impl BufferBuilder {
         }
     }
 
-    pub fn label(mut self, label: &impl std::fmt::Display) -> Self {
-        self.label = Some(format!("{label}").to_string());
+    pub fn label(mut self, label: impl Into<String>) -> Self {
+        self.label = Some(label.into());
         self
     }
 

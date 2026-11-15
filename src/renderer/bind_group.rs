@@ -2,7 +2,7 @@ use super::buffer::{Buffer, BufferInternal};
 use std::cell::{Ref, RefCell};
 use std::rc::Rc;
 
-struct BindGroup {
+pub struct BindGroup {
     device: wgpu::Device,
     label: Option<String>,
     bindings: Vec<Binding>,
@@ -10,12 +10,12 @@ struct BindGroup {
     data: wgpu::BindGroup,
 }
 
-struct BindGroupBuilder<'a> {
+pub struct BindGroupBuilder<'a> {
     label: Option<String>,
     entries: Vec<BindGroupEntry<'a>>,
 }
 
-struct BindGroupEntry<'a> {
+pub struct BindGroupEntry<'a> {
     pub visibility: wgpu::ShaderStages,
     pub binding: BindingDescriptor<'a>,
 }
@@ -69,10 +69,18 @@ impl BindGroup {
 
         self.data = data;
     }
+
+    pub fn data(&self) -> &wgpu::BindGroup {
+        &self.data
+    }
+
+    pub fn layout(&self) -> &wgpu::BindGroupLayout {
+        &self.layout
+    }
 }
 
 impl<'a> BindGroupBuilder<'a> {
-    pub fn build(self, device: wgpu::Device) -> BindGroup {
+    pub fn build(self, device: &wgpu::Device) -> BindGroup {
         let mut bindings = Vec::new();
         for entry in self.entries.iter() {
             bindings.push(match entry.binding {
@@ -138,6 +146,11 @@ impl<'a> BindGroupBuilder<'a> {
             layout: layout,
             data: data,
         }
+    }
+
+    pub fn label(mut self, label: impl Into<String>) -> Self {
+        self.label = Some(label.into());
+        self
     }
 
     pub fn entry(mut self, entry: BindGroupEntry<'a>) -> Self {
