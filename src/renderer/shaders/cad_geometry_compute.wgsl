@@ -22,6 +22,12 @@ struct GpuPoint {
     _padding: u32,
 };
 
+struct SelectionInfo {
+    pointer_pos: vec2<f32>,
+    hovered_element_id: u32,
+    _padding: u32,
+};
+
 @group(0) @binding(0)
 var<storage, read_write> vertices: array<GpuVertex>;
 
@@ -32,9 +38,12 @@ var<storage, read_write> draw_args: DrawIndirectArgs;
 var<uniform> view_transform: ViewTransform;
 
 @group(0) @binding(3)
-var<storage, read> points: array<GpuPoint>;
+var<uniform> selection_info: SelectionInfo;
 
 @group(0) @binding(4)
+var<storage, read> points: array<GpuPoint>;
+
+@group(0) @binding(5)
 var<uniform> num_points: u32;
 
 struct Triangle {
@@ -54,6 +63,9 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
     }
     let point = points[point_index];
 
+    var pointer_pos_ndc = selection_info.pointer_pos/view_transform.viewport_size * 2.0 - 1.0;
+    pointer_pos_ndc.y = -pointer_pos_ndc.y;
+
     let num_triangles: u32 = 16; // must be at least 3.
                                  // also need to make sure there is enough space in
                                  // the vertex buffer
@@ -64,6 +76,7 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
 
     let center_world = vec4<f32>(point.position.x, -point.position.y, 0.0, 1.0);
     let center_ndc = (view_transform.matrix * center_world).xy;
+    //let center_ndc = pointer_pos_ndc;
 
     let half_size = 3.0; // pixels
     var color = vec4<f32>(0.0, 0.0, 0.0, 1.0);

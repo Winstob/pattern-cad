@@ -55,7 +55,7 @@ impl App {
         renderer.prepare_cad_model(
             model,
             model_view,
-            &self.app_ui.cad_viewport_input.viewport_size,
+            &self.app_ui.cad_viewport_input,
             self.display_metrics.pixels_per_mm,
         );
 
@@ -65,7 +65,7 @@ impl App {
             self.display_metrics.pixels_per_mm,
         );
 
-        renderer.render(window);
+        renderer.render(window, &self.app_ui.cad_viewport_input.pointer_pos);
     }
 
     fn handle_ui_command(&mut self, cmd: UiCommand) {

@@ -3,6 +3,7 @@ use super::bind_group::{BindGroup, BindGroupEntry, BindingDescriptor};
 use super::buffer::Buffer;
 use crate::cad::model::CadModel;
 use crate::renderer::CadView;
+use crate::ui::ViewportInput;
 use glam::*;
 
 pub struct CadRenderer {
@@ -12,6 +13,7 @@ pub struct CadRenderer {
     vertex_buffer: Buffer,
     indirect_draw_args_buffer: Buffer,
     view_transform_buffer: Buffer,
+    selection_info_buffer: Buffer,
     points_buffer: Buffer,
     num_points_buffer: Buffer,
     num_points: u32,
@@ -51,6 +53,16 @@ impl CadRenderer {
             .usage(wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST)
             .build(device);
 
+        let selection_info_buffer = Buffer::builder()
+            .label("CAD Hovered Element Buffer")
+            .size(std::mem::size_of::<SelectionInfo>() as u64)
+            .usage(
+                wgpu::BufferUsages::UNIFORM
+                    | wgpu::BufferUsages::COPY_SRC
+                    | wgpu::BufferUsages::COPY_DST,
+            )
+            .build(device);
+
         let points_buffer = Buffer::builder()
             .label("CAD Points Buffer")
             .size(1024)
@@ -84,6 +96,13 @@ impl CadRenderer {
                 binding: BindingDescriptor::Buffer {
                     ty: wgpu::BufferBindingType::Uniform,
                     resource: &view_transform_buffer,
+                },
+            })
+            .entry(BindGroupEntry {
+                visibility: wgpu::ShaderStages::COMPUTE,
+                binding: BindingDescriptor::Buffer {
+                    ty: wgpu::BufferBindingType::Uniform,
+                    resource: &selection_info_buffer,
                 },
             })
             .entry(BindGroupEntry {
@@ -179,6 +198,7 @@ impl CadRenderer {
             vertex_buffer,
             indirect_draw_args_buffer,
             view_transform_buffer,
+            selection_info_buffer,
             points_buffer,
             num_points_buffer,
             num_points: 0,
@@ -196,7 +216,8 @@ impl CadRenderer {
         queue: &wgpu::Queue,
         model: Option<&CadModel>,
         model_view: &CadView,
-        viewport_size: &Vec2,
+        //viewport_size: &Vec2,
+        viewport_input: &ViewportInput,
         pixels_per_mm: f32,
     ) {
         let mut recreate_bind_groups = false;
@@ -258,15 +279,28 @@ impl CadRenderer {
 
         let transform = ViewTransform {
             world_to_ndc_matrix: model_view
-                .world_to_ndc_matrix(viewport_size, pixels_per_mm)
+                .world_to_ndc_matrix(&viewport_input.viewport_size, pixels_per_mm)
                 .to_cols_array_2d(),
-            viewport_size: [viewport_size.x, viewport_size.y],
+            viewport_size: [
+                viewport_input.viewport_size.x,
+                viewport_input.viewport_size.y,
+            ],
             _padding: [0.0; 2],
         };
         queue.write_buffer(
             &self.view_transform_buffer.data(),
             0,
             bytemuck::bytes_of(&transform),
+        );
+
+        queue.write_buffer(
+            &self.selection_info_buffer.data(),
+            0,
+            bytemuck::bytes_of(
+                &viewport_input
+                    .pointer_pos
+                    .unwrap_or(glam::Vec2::new(0f32, 0f32)),
+            ),
         );
 
         if recreate_bind_groups {
@@ -281,6 +315,7 @@ impl CadRenderer {
         msaa_target: &wgpu::TextureView,
         target: &wgpu::TextureView,
         viewport: ViewportRect,
+        pointer_pos: &Option<glam::Vec2>,
     ) {
         self.device
             .on_uncaptured_error(std::sync::Arc::new(|error| {
@@ -367,5 +402,14 @@ struct ViewTransform {
 pub struct GpuPoint {
     pub location: [f32; 2],
     pub element_id: u32,
+    pub _padding: u32,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
+pub struct SelectionInfo {
+    /// location in pixel space
+    pub pointer_pos: [f32; 2],
+    pub hovered_element_id: u32,
     pub _padding: u32,
 }

@@ -1,3 +1,4 @@
+use crate::ui::ViewportInput;
 mod gui_renderer;
 use gui_renderer::GuiRenderer;
 mod bind_group;
@@ -85,14 +86,19 @@ impl Renderer {
         &mut self,
         model: Option<&CadModel>,
         model_view: &CadView,
-        viewport_size: &Vec2,
+        viewport_input: &ViewportInput,
         pixels_per_mm: f32,
     ) {
-        self.cad_renderer
-            .prepare(&self.queue, model, model_view, viewport_size, pixels_per_mm);
+        self.cad_renderer.prepare(
+            &self.queue,
+            model,
+            model_view,
+            viewport_input,
+            pixels_per_mm,
+        );
     }
 
-    pub fn render(&mut self, window: &Window) {
+    pub fn render(&mut self, window: &Window, pointer_pos: &Option<glam::Vec2>) {
         let output = match self.surface.get_current_texture() {
             wgpu::CurrentSurfaceTexture::Success(output) => output,
 
@@ -149,6 +155,7 @@ impl Renderer {
             &msaa_view,
             &view,
             self.gui_renderer.cad_viewport_rect.unwrap(),
+            pointer_pos,
         );
 
         self.gui_renderer
