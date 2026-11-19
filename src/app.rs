@@ -51,11 +51,16 @@ impl App {
             model_available: model.is_some(),
         };
 
+        let selection_info = crate::renderer::SelectionInfo {
+            hovered_element_id: self.cad_engine.get_hovered_element(),
+        };
+
         renderer.prepare_ui(window, &mut self.app_ui, &ui_context);
         renderer.prepare_cad_model(
             model,
             model_view,
             &self.app_ui.cad_viewport_input,
+            &selection_info,
             self.display_metrics.pixels_per_mm,
         );
 
@@ -65,7 +70,11 @@ impl App {
             self.display_metrics.pixels_per_mm,
         );
 
-        renderer.render(window, &self.app_ui.cad_viewport_input.pointer_pos);
+        let render_output = renderer.render(window, &self.app_ui.cad_viewport_input.pointer_pos);
+        if let Some(render_output) = render_output {
+            self.cad_engine
+                .set_hovered_element(render_output.selection_info.hovered_element_id);
+        }
     }
 
     fn handle_ui_command(&mut self, cmd: UiCommand) {

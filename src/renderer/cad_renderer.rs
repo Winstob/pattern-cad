@@ -1,6 +1,7 @@
 use super::ViewportRect;
 use super::bind_group::{BindGroup, BindGroupEntry, BindingDescriptor};
 use super::buffer::Buffer;
+use crate::cad::ids::ElementId;
 use crate::cad::model::CadModel;
 use crate::renderer::CadView;
 use crate::ui::ViewportInput;
@@ -14,6 +15,7 @@ pub struct CadRenderer {
     indirect_draw_args_buffer: Buffer,
     view_transform_buffer: Buffer,
     selection_info_buffer: Buffer,
+    selection_info_readback_buffer: Buffer,
     points_buffer: Buffer,
     num_points_buffer: Buffer,
     num_points: u32,
@@ -54,13 +56,19 @@ impl CadRenderer {
             .build(device);
 
         let selection_info_buffer = Buffer::builder()
-            .label("CAD Hovered Element Buffer")
-            .size(std::mem::size_of::<SelectionInfo>() as u64)
+            .label("CAD Selection Info Buffer")
+            .size(std::mem::size_of::<GpuSelectionInfo>() as u64)
             .usage(
-                wgpu::BufferUsages::UNIFORM
+                wgpu::BufferUsages::STORAGE
                     | wgpu::BufferUsages::COPY_SRC
                     | wgpu::BufferUsages::COPY_DST,
             )
+            .build(device);
+
+        let selection_info_readback_buffer = Buffer::builder()
+            .label("CAD Selection Info Readback Buffer")
+            .size(std::mem::size_of::<GpuSelectionInfo>() as u64)
+            .usage(wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ)
             .build(device);
 
         let points_buffer = Buffer::builder()
@@ -101,7 +109,7 @@ impl CadRenderer {
             .entry(BindGroupEntry {
                 visibility: wgpu::ShaderStages::COMPUTE,
                 binding: BindingDescriptor::Buffer {
-                    ty: wgpu::BufferBindingType::Uniform,
+                    ty: wgpu::BufferBindingType::Storage { read_only: false },
                     resource: &selection_info_buffer,
                 },
             })
@@ -199,6 +207,7 @@ impl CadRenderer {
             indirect_draw_args_buffer,
             view_transform_buffer,
             selection_info_buffer,
+            selection_info_readback_buffer,
             points_buffer,
             num_points_buffer,
             num_points: 0,
@@ -216,8 +225,8 @@ impl CadRenderer {
         queue: &wgpu::Queue,
         model: Option<&CadModel>,
         model_view: &CadView,
-        //viewport_size: &Vec2,
         viewport_input: &ViewportInput,
+        selection_info: &SelectionInfo,
         pixels_per_mm: f32,
     ) {
         let mut recreate_bind_groups = false;
@@ -231,7 +240,17 @@ impl CadRenderer {
                 .points
                 .iter()
                 .map(|(element_id, point)| GpuPoint {
-                    location: [point.location.x, point.location.y],
+                    color: match selection_info.hovered_element_id {
+                        Some(hovered_id) => {
+                            if hovered_id == *element_id {
+                                [0.5, 0.1, 0.0, 1.0]
+                            } else {
+                                [0.0, 0.0, 0.0, 1.0]
+                            }
+                        }
+                        None => [0.0, 0.0, 0.0, 1.0],
+                    },
+                    location: [point.element.location.x, point.element.location.y],
                     element_id: element_id.0.into(),
                     _padding: 0,
                 })
@@ -293,14 +312,17 @@ impl CadRenderer {
             bytemuck::bytes_of(&transform),
         );
 
+        let selection_info_buffer_data = GpuSelectionInfo {
+            pointer_pos: viewport_input
+                .pointer_pos
+                .unwrap_or(glam::Vec2::new(0f32, 0f32))
+                .into(),
+            ..Default::default()
+        };
         queue.write_buffer(
             &self.selection_info_buffer.data(),
             0,
-            bytemuck::bytes_of(
-                &viewport_input
-                    .pointer_pos
-                    .unwrap_or(glam::Vec2::new(0f32, 0f32)),
-            ),
+            bytemuck::bytes_of(&selection_info_buffer_data),
         );
 
         if recreate_bind_groups {
@@ -315,7 +337,6 @@ impl CadRenderer {
         msaa_target: &wgpu::TextureView,
         target: &wgpu::TextureView,
         viewport: ViewportRect,
-        pointer_pos: &Option<glam::Vec2>,
     ) {
         self.device
             .on_uncaptured_error(std::sync::Arc::new(|error| {
@@ -334,6 +355,14 @@ impl CadRenderer {
             let workgroup_count = self.num_points.div_ceil(64);
             compute_pass.dispatch_workgroups(workgroup_count, 1, 1);
         }
+
+        encoder.copy_buffer_to_buffer(
+            &self.selection_info_buffer.data(),
+            0,
+            &self.selection_info_readback_buffer.data(),
+            0,
+            std::mem::size_of::<GpuSelectionInfo>() as u64,
+        );
 
         // render pass
         {
@@ -371,6 +400,47 @@ impl CadRenderer {
             pass.draw_indirect(&self.indirect_draw_args_buffer.data(), 0);
         }
     }
+
+    pub fn post_render(&mut self) -> RenderOutput {
+        // NOTE: this blocks the cpu and waits for the gpu to finish the last frame.
+        // do we that?
+        let buffer = self.selection_info_readback_buffer.data();
+
+        buffer.map_async(
+            wgpu::MapMode::Read,
+            0..std::mem::size_of::<GpuSelectionInfo>() as u64,
+            |_| {},
+        );
+
+        self.device
+            .poll(wgpu::PollType::Wait {
+                submission_index: None,
+                timeout: None,
+            })
+            .unwrap();
+
+        let mapped = buffer
+            .get_mapped_range(0..std::mem::size_of::<GpuSelectionInfo>() as u64)
+            .unwrap();
+
+        let gpu_selection_info = bytemuck::pod_read_unaligned::<GpuSelectionInfo>(&mapped);
+
+        drop(mapped);
+        buffer.unmap();
+
+        RenderOutput {
+            selection_info: SelectionInfo {
+                hovered_element_id: match gpu_selection_info.has_hovered_element {
+                    0 => None,
+                    _ => Some(ElementId(gpu_selection_info.hovered_element_id)),
+                },
+            },
+        }
+    }
+}
+
+pub struct RenderOutput {
+    pub selection_info: SelectionInfo,
 }
 
 #[repr(C)]
@@ -400,6 +470,7 @@ struct ViewTransform {
 #[repr(C)]
 #[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct GpuPoint {
+    pub color: [f32; 4],
     pub location: [f32; 2],
     pub element_id: u32,
     pub _padding: u32,
@@ -407,9 +478,25 @@ pub struct GpuPoint {
 
 #[repr(C)]
 #[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
-pub struct SelectionInfo {
+pub struct GpuSelectionInfo {
     /// location in pixel space
     pub pointer_pos: [f32; 2],
     pub hovered_element_id: u32,
-    pub _padding: u32,
+    pub has_hovered_element: u32,
+    //pub _padding: u32;
+}
+
+impl Default for GpuSelectionInfo {
+    fn default() -> Self {
+        Self {
+            pointer_pos: [0.0, 0.0],
+            hovered_element_id: 0,
+            has_hovered_element: 0,
+            //_padding: 0,
+        }
+    }
+}
+
+pub struct SelectionInfo {
+    pub hovered_element_id: Option<ElementId>,
 }

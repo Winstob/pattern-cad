@@ -4,7 +4,7 @@ use super::feature::Feature;
 use super::model::CadModel;
 use crate::cad::element::{Element, ElementDefinition};
 use crate::cad::ids::*;
-use crate::cad::model::CadModelPoint;
+use crate::cad::model::{CadModelElement, CadModelPoint};
 use glam::*;
 
 pub struct CadDocument {
@@ -81,8 +81,10 @@ impl CadDocument {
                         }
                         self.model.points.insert(
                             element.id,
-                            CadModelPoint {
-                                location: Vec2 { x, y },
+                            CadModelElement::<CadModelPoint> {
+                                element: CadModelPoint {
+                                    location: Vec2 { x, y },
+                                },
                             },
                         );
                     }

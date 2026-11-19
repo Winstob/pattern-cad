@@ -3,7 +3,7 @@ use glam::*;
 use std::collections::HashMap;
 
 pub struct CadModel {
-    pub points: HashMap<ElementId, CadModelPoint>,
+    pub points: HashMap<ElementId, CadModelElement<CadModelPoint>>,
 }
 
 impl CadModel {
@@ -16,6 +16,10 @@ impl CadModel {
     pub fn clear(&mut self) {
         self.points.clear();
     }
+}
+
+pub struct CadModelElement<T> {
+    pub element: T,
 }
 
 pub struct CadModelPoint {

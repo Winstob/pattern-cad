@@ -7,6 +7,7 @@ pub mod model;
 pub mod tool;
 pub mod view;
 
+use crate::cad::ids::ElementId;
 use crate::cad::model::CadModel;
 use crate::commands::UiCommand;
 use crate::ui::{ViewportEvent, ViewportInput};
@@ -19,6 +20,7 @@ use view::CadView;
 pub struct CadEngine {
     document: Option<CadDocument>,
     active_tool: CadTool,
+    hovered_element: Option<ElementId>,
     view: CadView,
 }
 
@@ -27,6 +29,7 @@ impl CadEngine {
         CadEngine {
             document: None,
             active_tool: CadTool::Select,
+            hovered_element: None,
             view: CadView::default(),
         }
     }
@@ -80,5 +83,13 @@ impl CadEngine {
                 ),
             }
         }
+    }
+
+    pub fn set_hovered_element(&mut self, element_id: Option<ElementId>) {
+        self.hovered_element = element_id;
+    }
+
+    pub fn get_hovered_element(&self) -> Option<ElementId> {
+        self.hovered_element
     }
 }

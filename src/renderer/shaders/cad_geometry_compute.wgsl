@@ -17,6 +17,7 @@ struct GpuVertex {
 };
 
 struct GpuPoint {
+    color: vec4<f32>,
     position: vec2<f32>,
     element_id: u32,
     _padding: u32,
@@ -24,8 +25,9 @@ struct GpuPoint {
 
 struct SelectionInfo {
     pointer_pos: vec2<f32>,
-    hovered_element_id: u32,
-    _padding: u32,
+    hovered_element_id: atomic<u32>,
+    has_hovered_element: atomic<u32>,
+    //_padding: u32,
 };
 
 @group(0) @binding(0)
@@ -38,7 +40,7 @@ var<storage, read_write> draw_args: DrawIndirectArgs;
 var<uniform> view_transform: ViewTransform;
 
 @group(0) @binding(3)
-var<uniform> selection_info: SelectionInfo;
+var<storage, read_write> selection_info: SelectionInfo;
 
 @group(0) @binding(4)
 var<storage, read> points: array<GpuPoint>;
@@ -79,7 +81,7 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
     //let center_ndc = pointer_pos_ndc;
 
     let half_size = 3.0; // pixels
-    var color = vec4<f32>(0.0, 0.0, 0.0, 1.0);
+    //var color = vec4<f32>(0.0, 0.0, 0.0, 1.0);
 
     let radius_hypotenuse_ndc = vec2<f32>(2f*half_size/view_transform.viewport_size.x, 2f*half_size/view_transform.viewport_size.y);
 
@@ -92,10 +94,34 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
         let v3 = center_ndc.xy + vec2<f32>(cos(end_angle), sin(end_angle))*radius_hypotenuse_ndc;
 
         vertices[vertex_buf_index + triangle_index*3 + 0u].position = vec4<f32>(v1, 0.0, 1.0);
-        vertices[vertex_buf_index + triangle_index*3 + 0u].color = color;
+        vertices[vertex_buf_index + triangle_index*3 + 0u].color = point.color;
         vertices[vertex_buf_index + triangle_index*3 + 1u].position = vec4<f32>(v2, 0.0, 1.0);
-        vertices[vertex_buf_index + triangle_index*3 + 1u].color = color;
+        vertices[vertex_buf_index + triangle_index*3 + 1u].color = point.color;
         vertices[vertex_buf_index + triangle_index*3 + 2u].position = vec4<f32>(v3, 0.0, 1.0);
-        vertices[vertex_buf_index + triangle_index*3 + 2u].color = color;
+        vertices[vertex_buf_index + triangle_index*3 + 2u].color = point.color;
+
+        if (point_within_triangle(pointer_pos_ndc, v1, v2, v3)) {
+            atomicStore(
+                &selection_info.hovered_element_id,
+                point.element_id,
+            );
+            atomicStore(
+                &selection_info.has_hovered_element,
+                1,
+            );
+        }
     }
+}
+
+fn point_within_triangle(point: vec2<f32>, v1: vec2<f32>, v2: vec2<f32>, v3: vec2<f32>) -> bool {
+    let d1 = sign(point, v1, v2);
+    let d2 = sign(point, v2, v3);
+    let d3 = sign(point, v3, v1);
+    let has_neg = d1 < 0 || d2 < 0 || d3 < 0;
+    let has_pos = d1 > 0 || d2 > 0 || d3 > 0;
+    return !(has_neg && has_pos);
+}
+
+fn sign(p1: vec2<f32>, p2: vec2<f32>, p3: vec2<f32>) -> f32 {
+    return (p1[0] - p3[0]) * (p2[1] - p3[1]) - (p2[0] - p3[0]) * (p1[1] - p3[1]);
 }

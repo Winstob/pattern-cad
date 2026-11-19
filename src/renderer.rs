@@ -8,6 +8,7 @@ use crate::cad::model::CadModel;
 use crate::cad::view::CadView;
 use crate::ui::{Ui, UiContext};
 use cad_renderer::CadRenderer;
+pub use cad_renderer::SelectionInfo;
 use glam::*;
 
 use std::sync::Arc;
@@ -87,6 +88,7 @@ impl Renderer {
         model: Option<&CadModel>,
         model_view: &CadView,
         viewport_input: &ViewportInput,
+        selection_info: &cad_renderer::SelectionInfo,
         pixels_per_mm: f32,
     ) {
         self.cad_renderer.prepare(
@@ -94,11 +96,16 @@ impl Renderer {
             model,
             model_view,
             viewport_input,
+            selection_info,
             pixels_per_mm,
         );
     }
 
-    pub fn render(&mut self, window: &Window, pointer_pos: &Option<glam::Vec2>) {
+    pub fn render(
+        &mut self,
+        window: &Window,
+        pointer_pos: &Option<glam::Vec2>,
+    ) -> Option<cad_renderer::RenderOutput> {
         let output = match self.surface.get_current_texture() {
             wgpu::CurrentSurfaceTexture::Success(output) => output,
 
@@ -109,13 +116,13 @@ impl Renderer {
 
             wgpu::CurrentSurfaceTexture::Lost | wgpu::CurrentSurfaceTexture::Outdated => {
                 self.surface.configure(&self.device, &self.surface_config);
-                return;
+                return None;
             }
 
             wgpu::CurrentSurfaceTexture::Timeout
             | wgpu::CurrentSurfaceTexture::Occluded
             | wgpu::CurrentSurfaceTexture::Validation => {
-                return;
+                return None;
             }
         };
 
@@ -155,7 +162,6 @@ impl Renderer {
             &msaa_view,
             &view,
             self.gui_renderer.cad_viewport_rect.unwrap(),
-            pointer_pos,
         );
 
         self.gui_renderer
@@ -164,6 +170,8 @@ impl Renderer {
         self.queue.submit([encoder.finish()]);
 
         self.queue.present(output);
+
+        Some(self.cad_renderer.post_render())
     }
 }
 
